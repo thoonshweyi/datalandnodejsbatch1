@@ -14,6 +14,33 @@ const argage = process.argv[3];
 console.log(argname,argage); // SuSu 25
 
 
+// => Change Working Directory
+console.log("Before", process.cwd()); // Before D:\datalandcouses\nodejsbatch1\l8process
+process.chdir("..")
+process.chdir("..")
+console.log("After", process.cwd()); // After D:\datalandcouses
+
+
+// => Exist the Process
+// console.log("Before Exist");
+// process.exit(0); // 0 = success, 1 = error
+// console.log("After Exist");
+
+
+// exe 1
+function todotask(){
+    if(Math.random() > 0.5){
+        console.log("Task Complete");
+        process.exit(0);
+    }else{
+        console.log("Task Failed");
+        process.exit(1);
+    }
+}
+todotask();
+console.log("Hello Program");
+
+
 
 // *result (process.platform)
 // linus 
