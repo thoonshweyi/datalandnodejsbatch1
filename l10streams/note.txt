@@ -1,0 +1,83 @@
+=>What is a chunk?
+
+    A chunk is a small piece of data from the file.
+
+    In Node.js streams, chunks are usually represented as a Buffer object (binary data).
+
+    Example output you saw:
+
+    <Buffer 74 68 69 73 20 69 73 20 6e 65 77 20 70 6f 73 74 20 6f 6e 65 2e>
+
+
+    This is a Buffer, showing the file contents in hexadecimal.
+
+    If you convert it using .toString(), you get the readable text:
+
+    this is new post one.
+
+=>Why use chunks instead of reading the whole file?
+
+    Efficiency: If a file is very large (say, 5GB), reading the whole file into memory will crash your program.
+
+    Streaming: With chunks, you can start processing data as soon as it arrives, without waiting for the whole file.
+
+=>
+    data event → triggered every time a chunk is read.
+
+    chunk → buffer object containing that piece of file.
+
+    .length → size of the chunk in bytes.
+
+    .toString() → convert buffer to human-readable text.
+
+=>With encoding: 'utf-8':
+    If your file contains readable text, setting { encoding: 'utf-8' } is convenient because:
+
+    You don’t see raw Buffers.
+    You don’t need to call .toString() every time.
+    You directly get human-readable text in your chunks.
+
+
+
+🔹 What is pipe()?
+
+        pipe() is a method available on readable streams (rs1 in this case).
+
+        It allows you to connect (pipe) the output of a readable stream directly into a writable stream.
+
+        In other words:
+        📥 Read data (chunks) from rs1 → 📤 Write data (chunks) into ws1.
+
+        🔹 How it works internally
+
+        rs1 reads news.txt in chunks (buffers).
+
+        Each chunk is automatically passed to ws1.write().
+
+        When rs1 finishes reading, it closes ws1 automatically.
+
+        So this code:
+
+        rs1.pipe(ws1);
+
+
+        is basically shorthand for:
+
+        rs1.on('data', (chunk) => {
+        ws1.write(chunk);   // write each chunk
+        });
+
+        rs1.on('end', () => {
+        ws1.end();          // close write stream when done
+        });
+
+🔹 Why use pipe()?
+
+        Less code (no need to manually handle data and end events).
+
+        Handles backpressure automatically:
+
+        If the writable stream (ws1) is slower than the readable stream (rs1),
+        pipe() will pause the readable stream until the writable stream catches up.
+
+        This prevents memory overflow.
