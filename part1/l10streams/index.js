@@ -2,6 +2,8 @@
 const fs = require('node:fs');
 const http = require("node:http");
 const path = require("node:path");
+const zlib = require("zlib");
+
 // exe 1
 // const readstream1 = fs.createReadStream('./datafiles/postone.txt');
 
@@ -144,21 +146,50 @@ const path = require("node:path");
 
 // exe4 (stream a file to HTTP)
 
-const server = http.createServer((req,res)=>{
-    const filepath = path.join(__dirname,"datafiles/newss.txt");
+// const server = http.createServer((req,res)=>{
+//     const filepath = path.join(__dirname,"datafiles/news.txt");
     
-    const rs4 = fs.createReadStream(filepath);
+//     const rs4 = fs.createReadStream(filepath);
 
-    rs4.on("open",()=>{
-        res.writeHead(200,{"Content-Type":"text/plain"});
-        // res.writeHead(200,{"Content-Type":"application/pdf"}); // Error
-        rs4.pipe(res);
-    });
+//     rs4.on("open",()=>{
+//         res.writeHead(200,{"Content-Type":"text/plain"});
+//         // res.writeHead(200,{"Content-Type":"application/pdf"}); // Error
+//         rs4.pipe(res);
+//     });
 
-    rs4.on("error",(err)=>{
-        res.writeHead(404,{"Content-Type":"text/plain"});
-        res.end(`Not Found: ${err.message}`) // Not Found: ENOENT: no such file or directory, open 'D:\datalandcouses\nodejsbatch1\l10streams\datafiles\newss.txt'
-    });
-});
-server.listen(3000,()=>console.log("server is working. http://localhost:3000"));
+//     rs4.on("error",(err)=>{
+//         res.writeHead(404,{"Content-Type":"text/plain"});
+//         res.end(`Not Found: ${err.message}`) // Not Found: ENOENT: no such file or directory, open 'D:\datalandcouses\nodejsbatch1\l10streams\datafiles\newss.txt'
+//     });
+// });
+
+// ------------------------------------------------------------------------------------
+
+// => Stream with Compression (zlip)
+// const zlib = require("zlib");
+
+// exe 5 (zip)
+// const rs5 = fs.createReadStream('./datafiles/news.txt');
+// const ws5 = fs.createWriteStream('./datafiles/news.txt.gz');
+
+// rs5.pipe(zlib.createGzip()).pipe(ws5);
+
+// ws5.on('finish',()=>console.log("File compressed successfully."));
+// rs5.on('error',(err)=>console.log("Read error",err));
+// ws5.on('error',(err)=>console.log("Write error",err));
+
+
+
+
+// exe 6 (unzip)
+const rs6 = fs.createReadStream('./datafiles/news.txt.gz');
+const ws6 = fs.createWriteStream('./datafiles/newsunzip.txt');
+
+rs6.pipe(zlib.createGunzip()).pipe(ws6);
+
+ws6.on('finish',()=>console.log("File uncompressed successfully."));
+rs6.on('error',(err)=>console.log("Read error",err));
+ws6.on('error',(err)=>console.log("Write error",err));
+
+// ----------------------------------------------------------------------------------------
 

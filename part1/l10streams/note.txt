@@ -81,3 +81,39 @@
         pipe() will pause the readable stream until the writable stream catches up.
 
         This prevents memory overflow.
+
+=>  http.createServer(handler) 
+    -registers a callback (handler) for every incoming request.
+
+    The callback only runs when an actual request comes in.
+
+    Inside, you can:
+
+    read request info from req
+
+    build and send a response via res
+
+    even stream files directly with pipe().
+
+=>gzip
+    Key difference
+
+    ZIP format = container/archive.
+        It can hold multiple files, each with its name, metadata, etc.
+        → When you open a .zip, you see files inside it.
+
+        GZIP format = just one compressed stream of bytes.
+        It compresses one file or one data stream only, not multiple files.
+        → When you open a .gz, there is no “file inside” — it’s just the compressed version of the original file’s content.
+
+
+    Why it looks like “file inside gz”
+
+    When you double-click a .gz file on your system:
+
+    Your OS or archive tool decompresses it automatically.
+
+    Since GZIP usually compresses one file, the tool shows you the original file (news.txt).
+
+    That creates the illusion that the .gz “contains” the file.
+    But really, the .gz just holds the compressed bytes of that one file.
