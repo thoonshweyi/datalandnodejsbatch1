@@ -1,0 +1,18 @@
+=>Install nodemon
+
+    https://www.npmjs.com/package/nodemon
+
+    ctl + alt + t
+
+    npm install -g nodemon 
+
+    nodemon -v // 3.1.10
+
+--------------------------------------------------------------------
+=> Middleware
+
+    => morgan (v ^1.10.1)
+        npm init -y
+        (i) install Express
+            https://www.npmjs.com/package/morgan
+            npm i morgan
