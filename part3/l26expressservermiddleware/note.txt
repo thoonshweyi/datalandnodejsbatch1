@@ -16,3 +16,11 @@
         (i) install Express
             https://www.npmjs.com/package/morgan
             npm i morgan
+
+    => cors Cross-Origin-Resource Sharing (v ^2.8.5)
+        npm init -y
+            browser (SOP, Same-Origin Policy)
+        (i) install
+            https://www.npmjs.com/package/cors
+             npm i cors
+-----------------------------------------------------

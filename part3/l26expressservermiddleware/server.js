@@ -1,16 +1,43 @@
 // Build in middleware
 
-import express from "express"
-import morgan from "morgan"
+import express from "express";
+import morgan from "morgan";
+import cors from "cors";
+
 const app = express()
 const port = 3000
 
+app.use(morgan('dev')); // dev, combined, short, tiny
+
+// = method 1
+// app.use(cors()); // **** allow all origin (development only)
+
+// = method 2
+// app.use(cors({
+//     origin: "http://localhost:3000",
+//     credentials: true
+// }))
+
+//= method 3
+// if (whitelist.indexOf(origin) !== -1) {
+//   callback(null, true)
+// } else {
+//   callback(new Error('Not allowed by CORS'))
+// }
+
+const whitelist = ['http://localhost:8000',"http://frontend.com","http://companyproject.org"];
+var corsOptions = {
+  origin: function (origin, callback) {
+    if(!origin) return callback(null, true) // for thirdparty app (such as postman, curl)
+    if (whitelist.indexOf(origin) !== -1) return callback(null, true)
+    callback(new Error('Not allowed by CORS'))
+  },
+  credentials: true
+}
+app.use(cors(corsOptions));
+
 // useful for POST/PUT
 app.use(express.json());
-
-
-
-// Thirdparty middlewares
 
 
 
