@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<%- include('./layout/head.ejs')  %>
+<body>
+    
+    <%- include('./layout/nav.ejs')  %>
+
+    <div class="content">
+        <h2>All Posts</h2>
+
+        <% if(posts.length > 0){ %>
+            <% posts.forEach(post=>{ %>
+                <h3><%= post.title %></h3>
+                <small><%= post.subtitle %></small> 
+                <p><%= post.body %></p>
+            <% }) %>
+
+        <% }else{ %>
+            <p>Thre are no blog posts to display.</p>
+        <% } %>
+     
+
+    </div>
+
+    <%- include('./layout/footer.ejs')  %>
+</body>
+</html>
