@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nodejs | <%= title %></title>
+</head>
+<body>
+    
+    <% const greet = 'Welcome to EJS Lesson'  %>
+
+    <nav>
+        <div>
+            <a href="/">Home Page</a>
+            <p><%= greet %></p>
+        </div>
+        <ul>
+            <li><a href="/">Home</a></li>
+            <li><a href="/about">About</a></li>
+            <li><a href="/posts/create">Create Post</a></li>
+        </ul>
+    </nav>
+
+    <div>
+        <h2>All Posts</h2>
+
+        <% if(posts.length > 0){ %>
+            <% posts.forEach(post=>{ %>
+                <h3><%= post.title %></h3>
+                <small><%= post.subtitle %></small> 
+                <p><%= post.body %></p>
+            <% }) %>
+
+        <% }else{ %>
+            <p>Thre are no blog posts to display.</p>
+        <% } %>
+     
+
+    </div>
+</body>
+</html>

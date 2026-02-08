@@ -1,0 +1,69 @@
+🔹 What is a Buffer in Node.js?
+
+A Buffer is like a temporary storage box that holds raw binary data (0s and 1s) directly in memory.
+Think of it as a fixed-size array of bytes.
+
+In your example:
+
+const buff1 = Buffer.from("Hello Bago");
+
+
+"Hello Bago" → text string (UTF-8 encoded).
+
+Buffer.from() → converts it into raw bytes.
+
+Output:
+
+<Buffer 48 65 6c 6c 6f 20 42 61 67 6f>
+
+
+Here:
+
+48 = ASCII code for H
+
+65 = ASCII code for e
+
+… and so on.
+
+So a buffer is binary representation of data in memory.
+
+✅ Buffers are useful when:
+
+Reading data from files
+
+Receiving data from network
+
+Handling images, zips, or other binary formats
+
+🔹 What is a Stream?
+
+A Stream is a sequence of data chunks flowing over time, built on top of Buffers.
+
+Imagine:
+
+Buffer = a bucket holding water
+
+Stream = water flowing through a pipe
+
+Node.js Streams work with chunks of Buffers instead of loading everything at once.
+That’s why they are memory-efficient for large files.
+
+Example:
+
+const fs = require("fs");
+
+const rs = fs.createReadStream("bigfile.txt");
+rs.on("data", chunk => {
+    console.log("New chunk received:", chunk);
+});
+
+
+Here:
+
+Each chunk is a Buffer.
+
+You don’t wait for the whole file → you process it piece by piece.
+
+A chunk is not a group of Buffers.
+
+A chunk is one Buffer, which may contain multiple characters/bytes depending on the encoding.

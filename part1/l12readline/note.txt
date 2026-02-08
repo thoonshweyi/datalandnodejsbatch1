@@ -1,0 +1,99 @@
+1. Normal readline.question
+
+    Without promise, it looks like this:
+
+    rl.question("Name: ", (answer) => {
+    console.log("You typed:", answer);
+    });
+
+
+    When you run this:
+
+    Node prints Name:
+
+    You type something (say Alice) and press Enter
+
+    Then readline calls the callback function with "Alice"
+
+    So under the hood:
+    👉 rl.question waits for input, then runs the function you pass as the second argument.
+
+2. Promise executor
+
+    When you create a Promise:
+
+    let p = new Promise((resolve, reject) => {
+    // you decide when to call resolve() or reject()
+    });
+
+
+    The Promise stays pending until you call resolve(value) or reject(error).
+
+    Example:
+
+    let p = new Promise((resolve) => {
+    resolve("done!");
+    });
+
+    p.then(result => console.log(result)); // prints "done!"
+
+3. Wrapping readline.question in a Promise
+
+    Now, we combine both ideas:
+
+    function questionAsync(rl, prompt) {
+    return new Promise((resolve) => {
+        rl.question(prompt, resolve);
+    });
+    }
+
+
+    What happens:
+
+    A new Promise is created.
+
+    It will stay pending until we call resolve(...).
+
+    We call rl.question(prompt, resolve).
+
+    Here, we pass resolve as the callback function!
+
+    When the user types something (e.g., Alice) and presses Enter:
+
+    readline normally calls the callback: callback("Alice")
+
+    But our callback is resolve, so it actually does: resolve("Alice").
+
+    Now the Promise is fulfilled with "Alice".
+
+4. Using it with await
+    const name = await questionAsync(rl, "Name: ");
+
+
+    Step 1: questionAsync runs → returns a Promise that is pending.
+
+    Step 2: Node asks "Name: " and waits.
+
+    Step 3: User types Alice → rl.question calls resolve("Alice").
+
+    Step 4: The Promise is fulfilled → await unwraps "Alice" and stores it in name.
+
+
+
+
+
+
+
+
+
+1. rl.on('line', ...)
+
+The line event is emitted every time the user presses Enter.
+
+Whatever the user typed before pressing Enter will be passed to the event handler.
+
+2. rl.prompt()
+
+The prompt() method writes the prompt string (default is > ) to the terminal, so the user knows they can type something.
+
+It also tells readline to start waiting for input again.

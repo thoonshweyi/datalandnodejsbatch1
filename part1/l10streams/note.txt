@@ -1,0 +1,119 @@
+=>What is a chunk?
+
+    A chunk is a small piece of data from the file.
+
+    In Node.js streams, chunks are usually represented as a Buffer object (binary data).
+
+    Example output you saw:
+
+    <Buffer 74 68 69 73 20 69 73 20 6e 65 77 20 70 6f 73 74 20 6f 6e 65 2e>
+
+
+    This is a Buffer, showing the file contents in hexadecimal.
+
+    If you convert it using .toString(), you get the readable text:
+
+    this is new post one.
+
+=>Why use chunks instead of reading the whole file?
+
+    Efficiency: If a file is very large (say, 5GB), reading the whole file into memory will crash your program.
+
+    Streaming: With chunks, you can start processing data as soon as it arrives, without waiting for the whole file.
+
+=>
+    data event → triggered every time a chunk is read.
+
+    chunk → buffer object containing that piece of file.
+
+    .length → size of the chunk in bytes.
+
+    .toString() → convert buffer to human-readable text.
+
+=>With encoding: 'utf-8':
+    If your file contains readable text, setting { encoding: 'utf-8' } is convenient because:
+
+    You don’t see raw Buffers.
+    You don’t need to call .toString() every time.
+    You directly get human-readable text in your chunks.
+
+
+
+🔹 What is pipe()?
+
+        pipe() is a method available on readable streams (rs1 in this case).
+
+        It allows you to connect (pipe) the output of a readable stream directly into a writable stream.
+
+        In other words:
+        📥 Read data (chunks) from rs1 → 📤 Write data (chunks) into ws1.
+
+        🔹 How it works internally
+
+        rs1 reads news.txt in chunks (buffers).
+
+        Each chunk is automatically passed to ws1.write().
+
+        When rs1 finishes reading, it closes ws1 automatically.
+
+        So this code:
+
+        rs1.pipe(ws1);
+
+
+        is basically shorthand for:
+
+        rs1.on('data', (chunk) => {
+        ws1.write(chunk);   // write each chunk
+        });
+
+        rs1.on('end', () => {
+        ws1.end();          // close write stream when done
+        });
+
+🔹 Why use pipe()?
+
+        Less code (no need to manually handle data and end events).
+
+        Handles backpressure automatically:
+
+        If the writable stream (ws1) is slower than the readable stream (rs1),
+        pipe() will pause the readable stream until the writable stream catches up.
+
+        This prevents memory overflow.
+
+=>  http.createServer(handler) 
+    -registers a callback (handler) for every incoming request.
+
+    The callback only runs when an actual request comes in.
+
+    Inside, you can:
+
+    read request info from req
+
+    build and send a response via res
+
+    even stream files directly with pipe().
+
+=>gzip
+    Key difference
+
+    ZIP format = container/archive.
+        It can hold multiple files, each with its name, metadata, etc.
+        → When you open a .zip, you see files inside it.
+
+        GZIP format = just one compressed stream of bytes.
+        It compresses one file or one data stream only, not multiple files.
+        → When you open a .gz, there is no “file inside” — it’s just the compressed version of the original file’s content.
+
+
+    Why it looks like “file inside gz”
+
+    When you double-click a .gz file on your system:
+
+    Your OS or archive tool decompresses it automatically.
+
+    Since GZIP usually compresses one file, the tool shows you the original file (news.txt).
+
+    That creates the illusion that the .gz “contains” the file.
+    But really, the .gz just holds the compressed bytes of that one file.

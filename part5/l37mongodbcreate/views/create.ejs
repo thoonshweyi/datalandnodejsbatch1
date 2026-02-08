@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<%- include('./layout/head.ejs')  %>
+<body>
+    <%- include('./layout/nav.ejs')  %>
+
+    <div>
+        <div>
+            <h1>Create New Post</h1>
+            <% if(error){ %>
+                <div class="alert alert-danger"><%= error %></div>
+            <% } %>
+        </div>
+
+        <div>
+            <div class="content">
+                <form action="/posts/create" method="POST">
+                    <div>
+                        <label for="">Post Title</label>
+                        <input type="text" name="title" id="title" value="<%= formData ? formData.title : '' %>">
+                    </div>
+
+                    <div>
+                        <label for="">Post Sub Title</label>
+                        <input type="text" name="subtitle" id="subtitle" value="<%= formData ? formData.subtitle : '' %>">
+                    </div>
+
+                    <div>
+                        <label for="body">Body</label>
+                        <textarea name="body" id="body"><%= formData ? formData.body : '' %></textarea>
+                    </div>
+                    <button>Submit</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+
+    
+    <%- include('./layout/footer.ejs')  %>
+</body>
+</html>

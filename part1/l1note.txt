@@ -1,0 +1,103 @@
+=> Nodejs
+https://nodejs.org/en
+
+Front-end (broswer) js
+Back-end (server) js nodejs
+
+Note: Nodejs is a runtime environment the lets you run Javascript code on the server, no just in the browser
+        Normally, Js runs in the browser (such as firefox, chrome), but node.js allow JS torun on your compouter or server 
+        just like Python, PHP, or Java
+        Come with npm (Node Package Manager), software library ecosystem
+
+=> Install node.js on Windows
+    https://nodejs.org/en/download
+
+=> Install node.js on Linux
+    https://trello.com/b/Jpnow1sR/setup-ubuntu-for-web-development
+
+    Install
+    open terminal (Ctrl+Alt+T)
+    sudo apt update && sudo apt upgrade -y
+    Official :
+    Node.js — Download Node.js®
+    (i) install curl
+    sudo apt install curl
+    (ii) install nvm
+    Thirdparty :
+    GitHub - nvm-sh/nvm: Node Version Manager - POSIX-compliant bash script to manage multiple active node.js versions
+    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
+    -----
+    export NVM_DIR="$([ -z "${XDG_CONFIG_HOME-}" ] && printf %s "${HOME}/.nvm" || printf %s "${XDG_CONFIG_HOME}/nvm")"
+    [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh" # This loads nvm
+    -----
+    => Check Version
+    nvm -v         or     nvm --version                  0.40.3
+    -----
+    => Optional (if nvm: command not found)
+    source ~/.bashrc
+    -----
+    => Check Version
+    nvm -v         or     nvm --version                  0.40.3
+    -_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-
+
+    Install Node
+    nvm ls-remote
+    nvm install v22.16.0
+    => Check Version
+    node --version      node -v                   v22.16.0
+    npm --version       npm -v                    v10.9.2
+    npx -v                    v10.9.2
+    -_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-
+
+    Set node version (Optional)
+    nvm ls           or        nvm list            or       nvm list-remote    or    nvm ls-remote
+    -_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-
+
+    if you want you can install other node version as well
+    nvm ls-remote
+    nvm install v(any version)
+    -----
+    => How to switch version
+    node --version
+    nvm use v(any version)
+    => Set default vesion
+    nvm alias default v(any version)
+    -_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-
+
+    Fix any missing dependencies (if needed)
+    sudo apt-get install -f
+    -_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-
+
+=> Install node.js on MacOS
+    homebrew
+    watch youtube
+-----------------------------------------------------------------------------------------------------------------
+=> Check version 
+    = (for windows / linux / macos)
+    node --version      or      node -v
+    npm --version       or      npm -v
+
+    nvm -v          (for linux & macos)
+-----------------------------------------------------------------------------------------------------------------
+=> HTTP Status Codes 
+
+Code            Meaning
+200             OK - Thre request was successful.
+301             Moved Permanently
+302             Found - Resource temporafily moved (common for redirects)
+400             Bad Request - The server could not understand the request due to invalid syntax.
+401             Unauthorized - Authentication required or has failed.
+403             Forbidden - Server understood the request but refused to authorize install
+404             Not Found - The server can't find the requested resource.
+500             Internal Server Error
+502             Bad Gateway - Server received and invalid response from an upstream server
+503             Service Unavailable
+504             Gateway Timeout - Server didn't receive the timely resource from an upstream server.
+
+
+
+100 Range = informational response
+200 Range = success codes 
+300 Range = code for redirects 
+400 Range = user or client error codes
+500 Range = server error codes

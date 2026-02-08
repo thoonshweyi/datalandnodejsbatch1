@@ -1,0 +1,124 @@
+=>Install nodemon
+
+    https://www.npmjs.com/package/nodemon
+
+    ctl + alt + t
+
+    npm install -g nodemon 
+
+    nodemon -v // 3.1.10
+
+--------------------------------------------------------------------
+=> Middleware
+
+    => morgan (v ^1.10.1)
+        npm init -y
+        (i) install Express
+            https://www.npmjs.com/package/morgan
+            npm i morgan
+
+    => cors Cross-Origin-Resource Sharing (v ^2.8.5)
+        npm init -y
+            browser (SOP, Same-Origin Policy)
+        (i) install
+            https://www.npmjs.com/package/cors
+             npm i cors
+
+    => helmet (v ^8.1.0) #clickjacking, MIME sniffing, Referer leaks
+        (i) install
+
+            https://www.npmjs.com/package/helmet/
+        
+            npm i helmet
+
+
+            <a href="https://thirdparty.com" rel="noreferrer nooppener" target="_blank">Open</a>
+
+        ====
+        =>helmet
+            Thoon Shwe Yi Kyaw@ThornPC MINGW64 /d/datalandcouses/nodejsbatch1/part3/l26expressservermiddleware (master)
+            $ curl -I http://localhost:3000
+            % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                            Dload  Upload   Total   Spent    Left  Speed
+            0    24    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0HTTP/1.1 200 OK
+            Content-Security-Policy: default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests
+            Cross-Origin-Opener-Policy: same-origin
+            Cross-Origin-Resource-Policy: same-origin
+            Origin-Agent-Cluster: ?1
+            Referrer-Policy: no-referrer
+            Strict-Transport-Security: max-age=31536000; includeSubDomains
+            X-Content-Type-Options: nosniff
+            X-DNS-Prefetch-Control: off
+            X-Download-Options: noopen
+            X-Frame-Options: SAMEORIGIN
+            X-Permitted-Cross-Domain-Policies: none
+            X-XSS-Protection: 0
+            Vary: Origin
+            Access-Control-Allow-Credentials: true
+            Content-Type: text/html; charset=utf-8
+            Content-Length: 24
+            ETag: W/"18-9Vvr/08GVbosT3faJGcN+3UyZOI"
+            Date: Sun, 30 Nov 2025 11:34:17 GMT
+            Connection: keep-alive
+            Keep-Alive: timeout=5
+
+
+            =Original Header
+            Thoon Shwe Yi Kyaw@ThornPC MINGW64 /d/datalandcouses/nodejsbatch1/part3/l26expressservermiddleware (master)
+            $ curl -I http://localhost:3000
+            % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                            Dload  Upload   Total   Spent    Left  Speed
+            0    24    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0HTTP/1.1 200 OK
+            X-Powered-By: Express
+            Vary: Origin
+            Access-Control-Allow-Credentials: true
+            Content-Type: text/html; charset=utf-8
+            Content-Length: 24
+            ETag: W/"18-9Vvr/08GVbosT3faJGcN+3UyZOI"
+            Date: Sun, 30 Nov 2025 11:36:53 GMT
+            Connection: keep-alive
+            Keep-Alive: timeout=5
+        ===============
+        =Request Info
+        {
+            "method": "GET",
+            "url": "/api/requestinfo",
+            "path": "/api/requestinfo",
+            "query": {},
+            "params": {},
+            "headers": {
+                "user-agent": "PostmanRuntime/7.49.1",
+                "accept": "*/*",
+                "postman-token": "30f9e56f-9967-43d7-9b63-e707cd185d2a",
+                "host": "localhost:3000",
+                "accept-encoding": "gzip, deflate, br",
+                "connection": "keep-alive"
+            },
+            "ip": "::1",
+            "hostname": "localhost",
+            "protocol": "http",
+            "secure": localhost
+        }
+
+
+
+        Header	        What it means	                    Example
+        Host	        Domain or IP you are requesting	    localhost:3000
+        User-Agent	    Browser/app making the request	    Mozilla/5.0 Chrome/142...
+        Accept	        Types of response client can accept	text/html, application/json
+        Content-Type	Format of data being sent	        application/json, multipart/form-data
+        Authorization	Token used for authentication/login	Bearer <jwt_token>
+        Cookie	        Cookies stored in the browser	    sessionId=ab123xy
+        Referer	        URL where request came from	        https://example.com/home
+        Accept-Language	Preferred language	                en-US, my-MM
+
+
+
+
+
+-----------------------------------------------------
+npm install -g nodemon
+
+
+ipv4        127.0.0.1   103.47.185.115 192.168.2.24
+ipv6        ::1         ::6545454
