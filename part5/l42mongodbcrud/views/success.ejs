@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<%- include('./layout/head.ejs')  %>
+<body>
+     <%- include('./layout/nav.ejs')  %>
+
+    <div class="content">
+        <h1>Success!</h1>
+        <div style="background-color: #f4f4f4; color: green; padding: 20px; border-radius: 5px; margin: 20px 0px;">
+            <p><strong><%= message %></strong></p>
+             <% if(postId){ %>
+                <p>Post ID: <%= postId %></p>
+             <% } %>
+        </div>
+
+        <div>
+            <a href="/posts/create">Create Another Post</a>
+            <a href="/">Back To Home</a>
+        </div>
+    </div>
+    
+    <%- include('./layout/footer.ejs')  %>
+</body>
+</html>

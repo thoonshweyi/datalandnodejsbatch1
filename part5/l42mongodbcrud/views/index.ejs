@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<%- include('./layout/head.ejs')  %>
+<body>
+    
+    <%- include('./layout/nav.ejs')  %>
+
+    <div class="content">
+        <h2>All Posts</h2>
+
+        <% if(posts.length > 0){ %>
+            <% posts.forEach(post=>{ %>
+
+
+                <h3>
+                    <a href="/posts/<%= post._id %>" style="text-decoration: none;"><%= post.title %></a>
+                </h3>
+
+                <small>Posted: <%= post.createdAt ? new Date(post.createdAt).toLocaleString() : "Unknown date" %></small>
+                
+                <h5><%= post.subtitle %></h5> 
+
+                <p><%= post.body %></p>
+                
+                    <a href="/posts/<%= post._id %>/edit" class="btn">Edit</a>
+                    <form action="/posts/<%= post._id %>/delete" method="POST" style="display: inline;" onsubmit="return confirm('Are you sure to delete this post?')">
+                        <button type="submit" class="btn">Delete</button>
+                    </form>
+
+                <hr/>
+            <% }) %>
+
+        <% }else{ %>
+            <p>Thre are no blog posts to display.</p>
+            <a href="/posts/create">Create First Post</a>
+        <% } %>
+     
+
+    </div>
+
+    <%- include('./layout/footer.ejs')  %>
+</body>
+</html>
