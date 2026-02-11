@@ -6,7 +6,21 @@
     <%- include('./layout/nav.ejs')  %>
 
     <div class="content">
-        <h2>All Posts</h2>
+        <div>
+            <h2>Latest Blog Posts</h2>
+            <p class="text-muted">Total posts: <%= total %></p>
+        </div>
+
+        <!-- search -->
+        <form class="mb-3" action="" method="GET">
+            <div class="input-group">
+                <input type="text" name="q" class="form-control" placeholder="Search posts...." value="<%= q || '' %>"/>
+                <button type="submit" class="btn btn-outline-primary">Search</button>
+                <% if(q){ %>
+                    <a href="/" class="btn btn-online-secondary">Clear</a>
+                <% } %>
+            </div>
+        </form>
 
         <% if(posts.length > 0){ %>
             <% posts.forEach(post=>{ %>
@@ -35,6 +49,13 @@
             <a href="/posts/create">Create First Post</a>
         <% } %>
      
+        <!-- Pagination -->
+        <!-- http://localhost:3000/?page=2 -->
+        <div class="d-flex justify-content-center align-items-center gap-2 mt-4">
+            <a href="/?page=<%= page - 1 %>" class="btn btn-outline-secondary">Prev</a>
+            <span class="text-muted"><%= page %> / totalPage</span>
+            <a href="/?page=<%= page + 1 %>" class="btn btn-outline-secondary">Next</a>
+        </div>
 
     </div>
 

@@ -35,6 +35,45 @@ const dbURL = process.env.MONGO_URI;
 let client;
 let db;
 
+// Helpers
+function slugify(title){
+	return 	String(title)
+			.trim()
+			.toLowerCase()
+			.replace(/[^\w\s-]/g,'') // remove special chars
+			.replace(/[\s_-]/g,"-") // spaces / underscores to dash
+			.replace(/^-+|-+$/g,""); // trim (left or right)
+}
+
+// [^] = not, remove @#$!
+
+// \w = word character (a-zstdCompress,A-Z,0-9,_)
+// \s = white space
+
+// g = global
+// const text = "cat cow cat"
+// text.replace(/cat/,'dog') // dog cow cat
+// text.replace(/cat/g,'dog') // dog cow dog
+
+// New Post One = new_post-one
+// New Post One = new_post-one
+
+async function uniqueslug(collection,baseSlug, ignoreId=null){
+	let slug = baseSlug;
+	let i = 1;
+
+	while(true){
+		const query = ignoreId ? {slug,_id:{$ne:ignoreId}}  : [slug]
+
+		const exists = await collection.findOne(query,{projection:{_id:1}}); // {projection:{_id:1}} means only return the _id field
+
+		if(!exists) return slug;
+
+		i += 1;
+		slug = `${baseSlug}-${i}`;
+	}
+}
+
 // Connect to MongoDB
 async function connectToMongoDB(){
 	try{
@@ -67,31 +106,50 @@ app.use((req,res,next)=>{
 
 
 
-// Get route
+// Get route (with search + pagination)
 app.get('/', async(req, res) => {
-	//  res.render("index")
-
-	// res.render("index",{title:"Home Page"});
-	// const posts = [
-	// 	{ title: "post one", subtitle: "this is new post one", body: "Lorem Ipsum is simply dummy text of the printing and typesetting industry." },
-	// 	{ title: "post two", subtitle: "this is new post two", body: "Lorem Ipsum is simply dummy text of the printing and typesetting industry." },
-	// 	{ title: "post three", subtitle: "this is new post three", body: "Lorem Ipsum is simply dummy text of the printing and typesetting industry." }
-	// ]
-	// res.render("index", { title: "Home Page", posts });
 
 	try{
+		console.log(req);
+
+		const page = Math.max(parseInt(req.query.page) || 1,1); // NaN ignore
+		const limit = 2;
+		const skip = (page - 1) * limit;
+
+		// post = 4;
+		// page = 2;
+		// limit = 2
+		// skip = (2-1) * 2 = 2 * 2 = 4
+
+		const q = (req.query.q || "").trim();
+
+		const filter = q ? {
+			$or: [
+				{title: {$regex:q,$options: "i"}},
+				{subtitle: {$regex:q,$options: "i"}},
+				{body: {$regex:q,$options: "i"}},
+			]
+		} : {};
+
 		console.log("Fetching posts from MongoDB....");
 
 		const posts = await db.collection('posts')
-						.find({})
+						.find(filter)
 						.sort({createdAt:-1})
+						.skip(skip)
+						.limit(limit)
 						.toArray(); // Newest first
-		console.log(`Found ${posts.length} posts in database`);
+		// console.log(`Found ${posts.length} posts in database`);
 
+		const total = await db.collection('posts').countDocuments(filter);
 		res.render('index',{ 
 			title: "Home Page", 
 			posts: posts,
-			postsCount: posts.length
+			postsCount: posts.length,
+			total,
+			page,
+			limit,
+			q
 		});
 		
 	}catch(error){
@@ -135,9 +193,23 @@ app.post('/posts/create', async (req,res)=>{
 			});
 		}
 
+		const baseslug = slugify(title);
+
+		// optional
+		if(!baseslug){
+			return res.render("create",{
+				title: "Create New Post",
+				error: "Title is not valid to generate slug",
+				formData: req.body
+			});
+		}
+		const postcol = req.db.collection('posts');
+		const slug = await uniqueslug(postcol,baseslug);
+
 		// prepare post data
 		const newPost = {
 			title: title.trim(),
+			slug,
 			subtitle: subtitle.trim(),
 			body: body.trim(),
 			createdAt: new Date()
@@ -200,7 +272,7 @@ app.get("/posts/:id/edit",async(req,res)=>{
 
 		if(!ObjectId.isValid(id)){
 			// THROW ERROR
-			res.status(400).render("error",{
+			return res.status(400).render("error",{
 				title: "Invalid ID",
 				error: `Post ID is not valid`,
 			})
@@ -234,19 +306,19 @@ app.post("/posts/:id/edit",async(req,res)=>{
 		const {title,subtitle,body} = req.body
 		if(!ObjectId.isValid(id)){
 			// THROW ERROR
-			res.status(400).render("error",{
+			return res.status(400).render("error",{
 				title: "Invalid ID",
 				error: `Post ID is not valid`,
-			})
+			});
 		}
 
-		// const post = await db.collection('posts').findOne({_id: new ObjectId(id)});
-		const post = await req.db.collection('posts').findOne({_id: new ObjectId(id)});
-
+	
 		// validation
 		if(!title || !subtitle || !body){
 			// reload old post to refill form
-			const post = await db.collection("posts").findOne({_id:new ObjectId(id)});
+			// const post = await db.collection('posts').findOne({_id: new ObjectId(id)});
+			const post = await req.db.collection('posts').findOne({_id: new ObjectId(id)});
+
 
 			return res.render("edit", { 
 				title: "Edit Post",
@@ -383,6 +455,15 @@ process.on("SIGINT",async ()=>{
 		// key value pair
 		// no nested objects
 
+
+// slug
+// Post Three new topic
+// post-three-new-topic
+
+
+
+
+// ------------------------------------------------------------------------------------------
 // ✅ What this does (short version)
 
 // 👉 It allows your Express app to read form data sent from HTML forms
