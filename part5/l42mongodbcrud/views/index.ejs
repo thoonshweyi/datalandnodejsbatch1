@@ -27,7 +27,7 @@
 
 
                 <h3>
-                    <a href="/posts/<%= post._id %>" style="text-decoration: none;"><%= post.title %></a>
+                    <a href="/posts/<%= post.slug %>" style="text-decoration: none;"><%= post.title %></a>
                 </h3>
 
                 <small>Posted: <%= post.createdAt ? new Date(post.createdAt).toLocaleString() : "Unknown date" %></small>
@@ -51,10 +51,21 @@
      
         <!-- Pagination -->
         <!-- http://localhost:3000/?page=2 -->
+        <!-- http://localhost:3000/?q=three --> <!-- http://localhost:3000/?q=post+three --> 
         <div class="d-flex justify-content-center align-items-center gap-2 mt-4">
-            <a href="/?page=<%= page - 1 %>" class="btn btn-outline-secondary">Prev</a>
-            <span class="text-muted"><%= page %> / totalPage</span>
-            <a href="/?page=<%= page + 1 %>" class="btn btn-outline-secondary">Next</a>
+            <!-- http://localhost:3000/?q=post%40three -->
+
+            <% if(page > 1){ %>
+                <a href="/?page=<%= page - 1 %><%= q? `&q=${encodeURIComponent(q)}` : '' %>" class="btn btn-outline-secondary">
+                    Prev
+                </a>
+            <% }  %>
+            <span class="text-muted"><%= page %> / <%= totalpages %> </span>
+            <% if(page < totalpages){ %>
+                <a href="/?page=<%= page + 1 %><%= q? `&q=${encodeURIComponent(q)}` : '' %>" class="btn btn-outline-secondary">
+                    Next
+                </a>
+            <% }  %>
         </div>
 
     </div>
@@ -62,3 +73,24 @@
     <%- include('./layout/footer.ejs')  %>
 </body>
 </html>
+
+<!-- Encode characters such as ?= / & : @ + $ # -->
+<!-- encodeURIComponent("text?") -->
+<!-- console.log(`?x=${encodeURIComponent("text?")}`) // ?x=text%3F -->
+
+
+<!-- 🧠 Super Simple Explanation
+
+👉 Pagination appends URL so the server knows:
+
+Which page you want
+
+What filters/search you are using
+
+🧩 Without URL append (What happens)
+
+Click Next → server forgets state → resets to page 1.
+
+🧩 With URL append (Correct)
+
+Click Next → server keeps state → shows correct page. -->

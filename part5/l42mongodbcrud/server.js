@@ -60,10 +60,10 @@ function slugify(title){
 
 async function uniqueslug(collection,baseSlug, ignoreId=null){
 	let slug = baseSlug;
-	let i = 1;
+	let i = 0;
 
 	while(true){
-		const query = ignoreId ? {slug,_id:{$ne:ignoreId}}  : [slug]
+		const query = ignoreId ? {slug,_id:{$ne:ignoreId}}  : {slug}
 
 		const exists = await collection.findOne(query,{projection:{_id:1}}); // {projection:{_id:1}} means only return the _id field
 
@@ -142,12 +142,16 @@ app.get('/', async(req, res) => {
 		// console.log(`Found ${posts.length} posts in database`);
 
 		const total = await db.collection('posts').countDocuments(filter);
+
+		const totalpages = Math.max(Math.ceil(total/limit),1);
+
 		res.render('index',{ 
 			title: "Home Page", 
 			posts: posts,
 			postsCount: posts.length,
 			total,
 			page,
+			totalpages,
 			limit,
 			q
 		});
@@ -219,11 +223,15 @@ app.post('/posts/create', async (req,res)=>{
 		console.log("Post created with ID",result.insertedId);
 
 		// show success message 
-		return res.render("success", { 
-			title: "Success",
-			message: `Post created successfully`,
-			postId: result.insertedId
-		});
+		// return res.render("success", { 
+		// 	title: "Success",
+		// 	message: `Post created successfully`,
+		// 	postId: result.insertedId
+		// });
+
+		// redirect to single page
+		return res.redirect(`/posts/${slug}`);
+
 	}catch(error){
 		console.error("Error creating post: ",error);
 		res.render("create", { 
@@ -234,26 +242,50 @@ app.post('/posts/create', async (req,res)=>{
 	}
 })
 
-// Single Post Detail Page
-app.get("/posts/:id",async(req,res)=>{
+// Single Post Detail Page (by id)
+// app.get("/posts/:id",async(req,res)=>{
+// 	try{
+// 		const {id} = req.params;
+
+// 		if(!ObjectId.isValid(id)){
+// 			return res.status(400).render("error",{
+// 				title: "Invalid ID",
+// 				error: "Post ID is not valid."
+// 			});
+// 		}
+
+// 		const post = await req.db.collection('posts').findOne({_id: new ObjectId(id)});
+
+// 		if(!post){
+// 			return res.status(404).render("404",{title: "404"});
+// 		}
+
+// 		return res.render('details',{
+// 			title: "Post Details",
+// 			post
+// 		})
+// 	}catch(error){
+// 		console.error("Error fetching single post: ",error);
+// 		res.status(500).render("error",{
+// 			title: "Server Error",
+// 			error: ""
+// 		})
+// 	}
+// });
+
+// Single Post Detail Page (by slug)
+app.get("/posts/:slug",async(req,res)=>{
 	try{
-		const {id} = req.params;
+		const {slug} = req.params;
 
-		if(!ObjectId.isValid(id)){
-			return res.status(400).render("error",{
-				title: "Invalid ID",
-				error: "Post ID is not valid."
-			});
-		}
-
-		const post = await req.db.collection('posts').findOne({_id: new ObjectId(id)});
+		const post = await req.db.collection('posts').findOne({slug});
 
 		if(!post){
 			return res.status(404).render("404",{title: "404"});
 		}
 
 		return res.render('details',{
-			title: "Post Details",
+			title: post.title,
 			post
 		})
 	}catch(error){
@@ -264,6 +296,7 @@ app.get("/posts/:id",async(req,res)=>{
 		})
 	}
 });
+
 
 // Edit Start
 app.get("/posts/:id/edit",async(req,res)=>{
@@ -281,9 +314,8 @@ app.get("/posts/:id/edit",async(req,res)=>{
 		// const post = await db.collection('posts').findOne({_id: new ObjectId(id)});
 		const post = await req.db.collection('posts').findOne({_id: new ObjectId(id)});
 
-		if(!post){
-			return res.status(404).render("404",{title:"404 Not Found"});
-		}
+		if(!post) return res.status(404).render("404",{title:"404 Not Found"});
+
 		res.render("edit",{
 			title: "Edit Post",
 			error: null,
@@ -300,6 +332,7 @@ app.get("/posts/:id/edit",async(req,res)=>{
 // Edit End
 
 
+
 app.post("/posts/:id/edit",async(req,res)=>{
 	try{
 		const {id} = req.params;
@@ -313,28 +346,44 @@ app.post("/posts/:id/edit",async(req,res)=>{
 		}
 
 	
-		// validation
+
+		// reload old post to refill form
+
+		// const post = await db.collection('posts').findOne({_id: new ObjectId(id)});
+		// const post = await req.db.collection('posts').findOne({_id: new ObjectId(id)});
+		
+		const postCol = req.db.collection('posts');
+		const _id = new ObjectId(id);
+
+		const existing = await postCol.findOne({_id});
+
+		if(!existing) return res.status(404).render("404",{title: "404"});
+
 		if(!title || !subtitle || !body){
-			// reload old post to refill form
-			// const post = await db.collection('posts').findOne({_id: new ObjectId(id)});
-			const post = await req.db.collection('posts').findOne({_id: new ObjectId(id)});
-
-
 			return res.render("edit", { 
 				title: "Edit Post",
 				error: `All fields are required`,
 				post: {
-					...post,
+					...existing,
 					title,
 					subtitle,
 					body
 				}
 			});
 		}
-		
+
+
+		let setnewslug = existing.slug; // post-five to post-six
+		const newbaseslug = slugify(title);
+
+		if(newbaseslug && title.trim() !== existing.title){
+			setnewslug = await uniqueslug(postCol,newbaseslug,_id);
+		}
+
 		const updateData = {
 			title: title.trim(),
 			subtitle: subtitle.trim(),
+			slug: setnewslug,
 			body: body.trim(),
 			updatedAt: new Date()
 		};
@@ -349,7 +398,9 @@ app.post("/posts/:id/edit",async(req,res)=>{
 		}
 
 		// redirect to home
-		return res.redirect('/');
+		// return res.redirect('/');
+
+		return res.redirect(`/posts/${setnewslug}`);
 		
 	}catch(error){
 		console.error("Error uptading page",error);
