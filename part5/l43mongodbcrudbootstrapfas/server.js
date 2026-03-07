@@ -1,15 +1,16 @@
-// Build in middleware
-
+import 'dotenv/config' // load .env
 import express from "express";
-
 import { fileURLToPath } from "url";
 import path from "path";
 import morgan from "morgan";
 import {MongoClient, ObjectId} from "mongodb"
 
+import http from "http";
+import {Server} from "socket.io";
+
 // express app
 const app = express()
-const port = 3000
+const port = process.env.PORT || 5000;
 
 // Set views folder 
 const __filename = fileURLToPath(import.meta.url);
@@ -27,18 +28,59 @@ app.use(express.static('public')); // http://localhost:3000/style.css
 app.use(express.urlencoded({extended:true})) // ***** HTML FORM submit for post/put 
 app.use(express.json()); // for JSON requests (from API Data)
 
+// Serve Bootstrap files
+app.use("/bootstrap",express.static(path.join(__dirname,"node_modules/bootstrap/dist/")))
+
+// Serve Font Awesome files
+app.use("/fontawesome",express.static(path.join(__dirname,"node_modules/@fortawesome/fontawesome-free")))
 
 // MongoDB Atlas URI
-const cluster = "cluster0";
-const dbName = "nodejsbatch2";
-const dbUser = "superuser";
-const dbPass = "Admin123";
-const dbURL = `mongodb+srv://${dbUser}:${dbPass}@${cluster}.5yebdvl.mongodb.net/?appName=Cluster0`;
+const dbName = process.env.DB_NAME;
+const dbURL = process.env.MONGO_URI;
 
 // MongoDB client
 
 let client;
 let db;
+
+// Helpers
+function slugify(title){
+	return 	String(title)
+			.trim()
+			.toLowerCase()
+			.replace(/[^\w\s-]/g,'') // remove special chars
+			.replace(/[\s_-]/g,"-") // spaces / underscores to dash
+			.replace(/^-+|-+$/g,""); // trim (left or right)
+}
+
+// [^] = not, remove @#$!
+
+// \w = word character (a-zstdCompress,A-Z,0-9,_)
+// \s = white space
+
+// g = global
+// const text = "cat cow cat"
+// text.replace(/cat/,'dog') // dog cow cat
+// text.replace(/cat/g,'dog') // dog cow dog
+
+// New Post One = new_post-one
+// New Post One = new_post-one
+
+async function uniqueslug(collection,baseSlug, ignoreId=null){
+	let slug = baseSlug;
+	let i = 0;
+
+	while(true){
+		const query = ignoreId ? {slug,_id:{$ne:ignoreId}}  : {slug}
+
+		const exists = await collection.findOne(query,{projection:{_id:1}}); // {projection:{_id:1}} means only return the _id field
+
+		if(!exists) return slug;
+
+		i += 1;
+		slug = `${baseSlug}-${i}`;
+	}
+}
 
 // Connect to MongoDB
 async function connectToMongoDB(){
@@ -72,31 +114,54 @@ app.use((req,res,next)=>{
 
 
 
-// Get route
+// Get route (with search + pagination)
 app.get('/', async(req, res) => {
-	//  res.render("index")
-
-	// res.render("index",{title:"Home Page"});
-	// const posts = [
-	// 	{ title: "post one", subtitle: "this is new post one", body: "Lorem Ipsum is simply dummy text of the printing and typesetting industry." },
-	// 	{ title: "post two", subtitle: "this is new post two", body: "Lorem Ipsum is simply dummy text of the printing and typesetting industry." },
-	// 	{ title: "post three", subtitle: "this is new post three", body: "Lorem Ipsum is simply dummy text of the printing and typesetting industry." }
-	// ]
-	// res.render("index", { title: "Home Page", posts });
 
 	try{
+		console.log(req);
+
+		const page = Math.max(parseInt(req.query.page) || 1,1); // NaN ignore
+		const limit = 2;
+		const skip = (page - 1) * limit;
+
+		// post = 4;
+		// page = 2;
+		// limit = 2
+		// skip = (2-1) * 2 = 2 * 2 = 4
+
+		const q = (req.query.q || "").trim();
+
+		const filter = q ? {
+			$or: [
+				{title: {$regex:q,$options: "i"}},
+				{subtitle: {$regex:q,$options: "i"}},
+				{body: {$regex:q,$options: "i"}},
+			]
+		} : {};
+
 		console.log("Fetching posts from MongoDB....");
 
 		const posts = await db.collection('posts')
-						.find({})
+						.find(filter)
 						.sort({createdAt:-1})
+						.skip(skip)
+						.limit(limit)
 						.toArray(); // Newest first
-		console.log(`Found ${posts.length} posts in database`);
+		// console.log(`Found ${posts.length} posts in database`);
+
+		const total = await db.collection('posts').countDocuments(filter);
+
+		const totalpages = Math.max(Math.ceil(total/limit),1);
 
 		res.render('index',{ 
 			title: "Home Page", 
 			posts: posts,
-			postsCount: posts.length
+			postsCount: posts.length,
+			total,
+			page,
+			totalpages,
+			limit,
+			q
 		});
 		
 	}catch(error){
@@ -140,9 +205,23 @@ app.post('/posts/create', async (req,res)=>{
 			});
 		}
 
+		const baseslug = slugify(title);
+
+		// optional
+		if(!baseslug){
+			return res.render("create",{
+				title: "Create New Post",
+				error: "Title is not valid to generate slug",
+				formData: req.body
+			});
+		}
+		const postcol = req.db.collection('posts');
+		const slug = await uniqueslug(postcol,baseslug);
+
 		// prepare post data
 		const newPost = {
 			title: title.trim(),
+			slug,
 			subtitle: subtitle.trim(),
 			body: body.trim(),
 			createdAt: new Date()
@@ -152,11 +231,15 @@ app.post('/posts/create', async (req,res)=>{
 		console.log("Post created with ID",result.insertedId);
 
 		// show success message 
-		return res.render("success", { 
-			title: "Success",
-			message: `Post created successfully`,
-			postId: result.insertedId
-		});
+		// return res.render("success", { 
+		// 	title: "Success",
+		// 	message: `Post created successfully`,
+		// 	postId: result.insertedId
+		// });
+
+		// redirect to single page
+		return res.redirect(`/posts/${slug}`);
+
 	}catch(error){
 		console.error("Error creating post: ",error);
 		res.render("create", { 
@@ -167,6 +250,62 @@ app.post('/posts/create', async (req,res)=>{
 	}
 })
 
+// Single Post Detail Page (by id)
+// app.get("/posts/:id",async(req,res)=>{
+// 	try{
+// 		const {id} = req.params;
+
+// 		if(!ObjectId.isValid(id)){
+// 			return res.status(400).render("error",{
+// 				title: "Invalid ID",
+// 				error: "Post ID is not valid."
+// 			});
+// 		}
+
+// 		const post = await req.db.collection('posts').findOne({_id: new ObjectId(id)});
+
+// 		if(!post){
+// 			return res.status(404).render("404",{title: "404"});
+// 		}
+
+// 		return res.render('details',{
+// 			title: "Post Details",
+// 			post
+// 		})
+// 	}catch(error){
+// 		console.error("Error fetching single post: ",error);
+// 		res.status(500).render("error",{
+// 			title: "Server Error",
+// 			error: ""
+// 		})
+// 	}
+// });
+
+// Single Post Detail Page (by slug)
+app.get("/posts/:slug",async(req,res)=>{
+	try{
+		const {slug} = req.params;
+
+		const post = await req.db.collection('posts').findOne({slug});
+
+		if(!post){
+			return res.status(404).render("404",{title: "404"});
+		}
+
+		return res.render('details',{
+			title: post.title,
+			post
+		})
+	}catch(error){
+		console.error("Error fetching single post: ",error);
+		res.status(500).render("error",{
+			title: "Server Error",
+			error: ""
+		})
+	}
+});
+
+
 // Edit Start
 app.get("/posts/:id/edit",async(req,res)=>{
 	try{
@@ -174,7 +313,7 @@ app.get("/posts/:id/edit",async(req,res)=>{
 
 		if(!ObjectId.isValid(id)){
 			// THROW ERROR
-			res.status(400).render("error",{
+			return res.status(400).render("error",{
 				title: "Invalid ID",
 				error: `Post ID is not valid`,
 			})
@@ -183,9 +322,8 @@ app.get("/posts/:id/edit",async(req,res)=>{
 		// const post = await db.collection('posts').findOne({_id: new ObjectId(id)});
 		const post = await req.db.collection('posts').findOne({_id: new ObjectId(id)});
 
-		if(!post){
-			return res.status(404).render("404",{title:"404 Not Found"});
-		}
+		if(!post) return res.status(404).render("404",{title:"404 Not Found"});
+
 		res.render("edit",{
 			title: "Edit Post",
 			error: null,
@@ -202,41 +340,58 @@ app.get("/posts/:id/edit",async(req,res)=>{
 // Edit End
 
 
+
 app.post("/posts/:id/edit",async(req,res)=>{
 	try{
 		const {id} = req.params;
 		const {title,subtitle,body} = req.body
 		if(!ObjectId.isValid(id)){
 			// THROW ERROR
-			res.status(400).render("error",{
+			return res.status(400).render("error",{
 				title: "Invalid ID",
 				error: `Post ID is not valid`,
-			})
+			});
 		}
 
+	
+
+		// reload old post to refill form
+
 		// const post = await db.collection('posts').findOne({_id: new ObjectId(id)});
-		const post = await req.db.collection('posts').findOne({_id: new ObjectId(id)});
+		// const post = await req.db.collection('posts').findOne({_id: new ObjectId(id)});
+		
+		const postCol = req.db.collection('posts');
+		const _id = new ObjectId(id);
 
-		// validation
+		const existing = await postCol.findOne({_id});
+
+		if(!existing) return res.status(404).render("404",{title: "404"});
+
 		if(!title || !subtitle || !body){
-			// reload old post to refill form
-			const post = await db.collection("posts").findOne({_id:new ObjectId(id)});
-
 			return res.render("edit", { 
 				title: "Edit Post",
 				error: `All fields are required`,
 				post: {
-					...post,
+					...existing,
 					title,
 					subtitle,
 					body
 				}
 			});
 		}
-		
+
+
+		let setnewslug = existing.slug; // post-five to post-six
+		const newbaseslug = slugify(title);
+
+		if(newbaseslug && title.trim() !== existing.title){
+			setnewslug = await uniqueslug(postCol,newbaseslug,_id);
+		}
+
 		const updateData = {
 			title: title.trim(),
 			subtitle: subtitle.trim(),
+			slug: setnewslug,
 			body: body.trim(),
 			updatedAt: new Date()
 		};
@@ -251,7 +406,9 @@ app.post("/posts/:id/edit",async(req,res)=>{
 		}
 
 		// redirect to home
-		return res.redirect('/');
+		// return res.redirect('/');
+
+		return res.redirect(`/posts/${setnewslug}`);
 		
 	}catch(error){
 		console.error("Error uptading page",error);
@@ -306,9 +463,16 @@ app.use((req, res) => {
 
 // Shutdown		( SIGINT = Signal Intterupt, raised when you press ctrl+c , woking with terminal )
 process.on("SIGINT",async ()=>{
-	await client.close();
-	console.log("MongoDB connection closed through app termination");
-	process.exit(0);
+
+	try{
+
+		if(client) await client.close();
+		
+		console.log("MongoDB connection closed through app termination");
+	}finally{
+		process.exit(0);
+	}
+
 });
 
 
@@ -357,6 +521,15 @@ process.on("SIGINT",async ()=>{
 		// key value pair
 		// no nested objects
 
+
+// slug
+// Post Three new topic
+// post-three-new-topic
+
+
+
+
+// ------------------------------------------------------------------------------------------
 // ✅ What this does (short version)
 
 // 👉 It allows your Express app to read form data sent from HTML forms

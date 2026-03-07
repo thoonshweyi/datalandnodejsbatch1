@@ -337,7 +337,7 @@ app.use((req, res) => {
 
 // Shutdown		( SIGINT = Signal Intterupt, raised when you press ctrl+c , woking with terminal )
 process.on("SIGINT",async ()=>{
-	await mongoose.connection.close();
+	await client.close();
 	console.log("MongoDB connection closed through app termination");
 	process.exit(0);
 });
