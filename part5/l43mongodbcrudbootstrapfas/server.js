@@ -4,8 +4,6 @@ import { fileURLToPath } from "url";
 import path from "path";
 import morgan from "morgan";
 import {MongoClient, ObjectId} from "mongodb"
-
-import http from "http";
 import {Server} from "socket.io";
 
 // express app
@@ -29,14 +27,37 @@ app.use(express.urlencoded({extended:true})) // ***** HTML FORM submit for post/
 app.use(express.json()); // for JSON requests (from API Data)
 
 // Serve Bootstrap files
-app.use("/bootstrap",express.static(path.join(__dirname,"node_modules/bootstrap/dist/")))
+app.use("/bootstrap",express.static(path.join(__dirname,"node_modules/bootstrap/dist/")));
 
 // Serve Font Awesome files
-app.use("/fontawesome",express.static(path.join(__dirname,"node_modules/@fortawesome/fontawesome-free")))
+app.use("/fontawesome",express.static(path.join(__dirname,"node_modules/@fortawesome/fontawesome-free")));
+
+
+// Start server
+const expressServer = app.listen(port,()=>{
+	console.log(`Server listening on http://localhost:${port}`);
+});
+
+// Socket.IO attached to server
+const io = new Server(expressServer,{
+	cors:{
+		origin: "*", // for dev. In production set your domain
+		methods: ["GET","POST"]
+	}
+});
+
+// Sockeet events
+io.on("connection",(socket)=>{
+	console.log("Socket connected: ",socket.id);
+
+	socket.on("disconnect",()=>{
+		console.log("Socket disconnect: ",socket.id)
+	});
+});
 
 // MongoDB Atlas URI
 const dbName = process.env.DB_NAME;
-const dbURL = process.env.MONGO_URI;
+const dbURL = process.env.MONGO_URI || "mongodb://127.0.0.1:27017";
 
 // MongoDB client
 
@@ -91,10 +112,6 @@ async function connectToMongoDB(){
 		db = client.db(dbName);
 		console.log("Conected to mongodb.");
 
-		app.listen(port, () => {
-			console.log(`Example app listening on http://localhost:${port}`)
-		})
-
 	}catch(err){
 		console.error("MongoDB connection error ",err);
 		process.exit(1);
@@ -105,12 +122,13 @@ connectToMongoDB()
 
 // Database Middleware
 app.use((req,res,next)=>{
-	if(!db){
-		return res.status(503).send("Database is not connected. Pleasee try again later");
-	}
-	req.db = db;
+	if(!db) return res.status(503).send("Database is not connected. Pleasee try again later");
+
+	req.db = db; // just nned for i you want to use req.db.collection()
+	req.io = io;
+
 	next();
-})
+});
 
 
 
@@ -118,7 +136,7 @@ app.use((req,res,next)=>{
 app.get('/', async(req, res) => {
 
 	try{
-		console.log(req);
+		// console.log(req);
 
 		const page = Math.max(parseInt(req.query.page) || 1,1); // NaN ignore
 		const limit = 2;
@@ -182,7 +200,6 @@ app.get('/about-us', (req, res) => {
 	res.redirect("/about");
 })
 
-
 app.get('/posts/create', (req, res) => {
 	res.render("create", { 
 		title: "Create Page",
@@ -229,6 +246,13 @@ app.post('/posts/create', async (req,res)=>{
 
 		const result = await db.collection('posts').insertOne(newPost);
 		console.log("Post created with ID",result.insertedId);
+
+		// Socket.IO 
+		req.io.emit('posts:created',{
+			title: newPost.title,
+			slug: newPost.slug,
+			createdAt: newPost.createdAt
+		});
 
 		// show success message 
 		// return res.render("success", { 
@@ -405,6 +429,14 @@ app.post("/posts/:id/edit",async(req,res)=>{
 			return res.status(404).render("404",{title: "404"});
 		}
 
+		// Socket.IO 
+		req.io.emit('posts:updated',{
+			id,
+			title: updateData.title,
+			slug: setnewslug,
+			updatedAt: updateData.updatedAt
+		});
+
 		// redirect to home
 		// return res.redirect('/');
 
@@ -438,6 +470,9 @@ app.post("/posts/:id/delete",async(req,res)=>{
 		if(result.deletedCount === 0){
 			return res.status(404).render("404",{title: "404"});
 		}
+
+		// Socket.IO 
+		req.io.emit('posts:deleted',{id});
 
 		// redirect to home
 		return res.redirect('/');
