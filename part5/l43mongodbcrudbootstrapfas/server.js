@@ -32,6 +32,11 @@ app.use("/bootstrap",express.static(path.join(__dirname,"node_modules/bootstrap/
 // Serve Font Awesome files
 app.use("/fontawesome",express.static(path.join(__dirname,"node_modules/@fortawesome/fontawesome-free")));
 
+// Serve SWEETALERT2
+app.use("/sweetalert2",express.static(path.join(__dirname,"node_modules/sweetalert2/dist")))
+
+// Serve Toastify
+app.use("/toastify",express.static(path.join(__dirname,"node_modules/toastify-js/src")))
 
 // Start server
 const expressServer = app.listen(port,()=>{

@@ -212,10 +212,42 @@ ipv6        ::1         ::6545454
         import http from "http";
         import {Server} from "socket.io";
 ----------------------------------------------------------------------------------
+=>  sweetalert (v 11.26.22)
+    (i) install (https://sweetalert2.github.io/)
+        npm install sweetalert2
+
+    (ii) Expose Font Awesome from node_modules
+        Express does not serve node_modules by default
+
+        = server.js
+        // Serve Font Awesome files
+        app.use("/sweetalert2",express.static(path.join(__dirname,"node_modules/sweetalert2/dist")))
+
+        // this maps to /sweetalert2/sweetalert2.all.min.js
+
+    (iii) Load Font Awesome CSS in head.ejs
+            <script src="/sweetalert2/sweetalert2.all.min.js"></script>
+
+----------------------------------------------------------------------------------
+=>  Toastify (v 1.12.0)
+    (i) install (https://github.com/apvarun/toastify-js/blob/master/README.md)
+        npm install toastify-js
 
 
+    (ii) Expose Toastify from node_modules
+        Express does not serve node_modules by default
 
+        = server.js
+        // Serve Toastify files
+        app.use("/toastify",express.static(path.join(__dirname,"node_modules/toastify-js/src")))
 
+        // this maps to /toastify/toastify.css and /toastify/toastify.js
+
+    (iii) Load Toastify CSS in head.ejs
+            <link href="/toastify/toastify.css" rel="stylesheet"/>
+            <script src="/toastify/toastify.js"></script>
+
+----------------------------------------------------------------------------------
 
 1️⃣ app.use()
 
