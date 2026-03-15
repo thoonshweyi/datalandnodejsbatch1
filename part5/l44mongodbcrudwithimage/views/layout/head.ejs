@@ -1,0 +1,48 @@
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nodejs | <%= title %></title>
+
+    <!-- Bootstrap -->
+    <link href="/bootstrap/css/bootstrap.min.css" rel="stylesheet"/>
+
+    <!-- Font Awesome -->
+    <link href="/fontawesome/css/all.min.css" rel="stylesheet"/>
+
+    <!-- Toastify -->
+    <link href="/toastify/toastify.css" rel="stylesheet"/>
+
+    <!-- custom css -->
+    <!-- <link href="/style.css" rel="stylesheet" /> -->
+
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/socketclients.js" defer></script>
+</head>
+
+
+<!-- Without defer:
+
+Browser reads HTML.
+
+When it sees <script>, it stops parsing HTML.
+
+Downloads and executes the script.
+
+Then continues parsing the HTML.
+
+With defer:
+
+Browser reads HTML.
+
+Script is downloaded in parallel.
+
+HTML parsing continues without stopping.
+
+Script executes after the HTML is finished parsing (before DOMContentLoaded).
+
+Timeline (simplified)
+Step	Without defer	With defer
+HTML parsing	Stops	Continues
+Script download	During stop	Parallel
+Script execution	Immediately	After HTML parsing -->
