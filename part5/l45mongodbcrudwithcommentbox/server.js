@@ -57,6 +57,23 @@ const io = new Server(expressServer,{
 io.on("connection",(socket)=>{
 	console.log("Socket connected: ",socket.id);
 
+	socket.on('join-post',(slug)=>{
+		const roomname = `post:${slug}`;
+		socket.join(roomname);
+
+		const count = io.sockets.adapter.rooms.get(roomname).size || 0;
+		io.to(roomname).emit("post:viewers",{slug,count});
+
+	});
+
+	socket.on('leave-post',(slug)=>{
+		const roomname = `post:${slug}`;
+		socket.leave(roomname);
+
+		const count = io.sockets.adapter.rooms.get(roomname)?.size || 0;
+		io.to(roomname).emit("post:viewers",{slug,count});
+	});
+
 	socket.on("disconnect",()=>{
 		console.log("Socket disconnect: ",socket.id)
 	});

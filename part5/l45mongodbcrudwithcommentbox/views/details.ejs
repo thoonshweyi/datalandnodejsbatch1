@@ -16,9 +16,11 @@
 
                         <h3><%= post.title %></h3>
 
-                        <p class="text-muted">Posted: <%= post.createdAt ? new Date(post.createdAt).toLocaleString() : "Unknown date" %></p>
+                        <p class="text-muted mb-2">Posted: <%= post.createdAt ? new Date(post.createdAt).toLocaleString() : "Unknown date" %></p>
                         
-                        <h5 class="text-secondary mt-5"><%= post.subtitle %></h5>
+                        <p class="text-muted mb-2">Readers Online: <span id="viewercounter" class="fw-bold">0</span></p>
+
+                        <h5 class="text-secondary"><%= post.subtitle %></h5>
                         <hr/>
 
                         <p><%= post.body %></p>
@@ -79,19 +81,53 @@
     <%- include('./layout/footer.ejs')  %>
     <script src="/bootstrap/js/bootstrap.bundle.min.js"></script>
 
-    <script src="/socket.io/socket.io.js"></script>
     <script>
-        const io = io();
+        const ioClient = io();
         const pageslug = "<%= post.slug %>";
 
-        io.on('comments:created',(payload)=>{
+        ioClient.emit("join-post",pageslug);
+
+        ioClient.on("post:viewers",(payload)=>{
             if(pageslug != payload.slug) return;
 
+            const viewercounter = document.getElementById('viewercounter');
+            if(viewercounter) viewercounter.textContent = payload.count;
+        });
+
+        ioClient.on('comments:created',(payload)=>{
+            if(pageslug != payload.slug) return;
+
+            const cmtbox = document.getElementById('commentsbox');
+            const comment = payload.comment;
+
             // create new div
+            const div = document.createElement('div');
+            div.innerHTML = `
+                <strong>${escapseHtml(comment.name)}</strong>
+                <small class="text-muted">${ new Date(comment.createdAt).toLocaleString() }</small>
+                <div >${ escapseHtml(comment.message) }</div>
+            `;
 
             // add to top (prepend)
-        })
-      
+            cmtbox.prepend(div);
+        });
+
+        // pagehide event can also use.
+        window.addEventListener('beforeunload',()=>{
+            ioClient.emit('leave-post',pageslug);
+        });
+
+        // helper
+        function escapseHtml(text){
+            return String(text)
+            .replaceAll("&","&amp;")
+            .replaceAll("<","&lt;")
+            .replaceAll(">","&gt;")
+            .replaceAll('"',"&quot;")
+            .replaceAll("'","&#39;");
+        }
+
+       
 
     </script>
 </body>
