@@ -1,0 +1,619 @@
+=>Install nodemon
+
+    https://www.npmjs.com/package/nodemon
+
+    ctl + alt + t
+
+    npm install -g nodemon 
+
+    nodemon -v // 3.1.10
+
+=> Install Express
+
+    npm init -y
+
+    (i) install Express
+        https://expressjs.com/
+        npm install express --save
+
+--------------------------------------------------------------------
+=> Middleware
+
+    => morgan (v ^1.10.1)
+        npm init -y
+        (i) install Express
+            https://www.npmjs.com/package/morgan
+            npm i morgan
+
+    => cors Cross-Origin-Resource Sharing (v ^2.8.5)
+        npm init -y
+            browser (SOP, Same-Origin Policy)
+        (i) install
+            https://www.npmjs.com/package/cors
+             npm i cors
+
+    => helmet (v ^8.1.0) #clickjacking, MIME sniffing, Referer leaks
+        (i) install
+
+            https://www.npmjs.com/package/helmet/
+        
+            npm i helmet
+
+
+            <a href="https://thirdparty.com" rel="noreferrer nooppener" target="_blank">Open</a>
+
+        ====
+        =>helmet
+            Thoon Shwe Yi Kyaw@ThornPC MINGW64 /d/datalandcouses/nodejsbatch1/part3/l26expressservermiddleware (master)
+            $ curl -I http://localhost:3000
+            % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                            Dload  Upload   Total   Spent    Left  Speed
+            0    24    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0HTTP/1.1 200 OK
+            Content-Security-Policy: default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests
+            Cross-Origin-Opener-Policy: same-origin
+            Cross-Origin-Resource-Policy: same-origin
+            Origin-Agent-Cluster: ?1
+            Referrer-Policy: no-referrer
+            Strict-Transport-Security: max-age=31536000; includeSubDomains
+            X-Content-Type-Options: nosniff
+            X-DNS-Prefetch-Control: off
+            X-Download-Options: noopen
+            X-Frame-Options: SAMEORIGIN
+            X-Permitted-Cross-Domain-Policies: none
+            X-XSS-Protection: 0
+            Vary: Origin
+            Access-Control-Allow-Credentials: true
+            Content-Type: text/html; charset=utf-8
+            Content-Length: 24
+            ETag: W/"18-9Vvr/08GVbosT3faJGcN+3UyZOI"
+            Date: Sun, 30 Nov 2025 11:34:17 GMT
+            Connection: keep-alive
+            Keep-Alive: timeout=5
+
+
+            =Original Header
+            Thoon Shwe Yi Kyaw@ThornPC MINGW64 /d/datalandcouses/nodejsbatch1/part3/l26expressservermiddleware (master)
+            $ curl -I http://localhost:3000
+            % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                            Dload  Upload   Total   Spent    Left  Speed
+            0    24    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0HTTP/1.1 200 OK
+            X-Powered-By: Express
+            Vary: Origin
+            Access-Control-Allow-Credentials: true
+            Content-Type: text/html; charset=utf-8
+            Content-Length: 24
+            ETag: W/"18-9Vvr/08GVbosT3faJGcN+3UyZOI"
+            Date: Sun, 30 Nov 2025 11:36:53 GMT
+            Connection: keep-alive
+            Keep-Alive: timeout=5
+        ===============
+        =Request Info
+        {
+            "method": "GET",
+            "url": "/api/requestinfo",
+            "path": "/api/requestinfo",
+            "query": {},
+            "params": {},
+            "headers": {
+                "user-agent": "PostmanRuntime/7.49.1",
+                "accept": "*/*",
+                "postman-token": "30f9e56f-9967-43d7-9b63-e707cd185d2a",
+                "host": "localhost:3000",
+                "accept-encoding": "gzip, deflate, br",
+                "connection": "keep-alive"
+            },
+            "ip": "::1",
+            "hostname": "localhost",
+            "protocol": "http",
+            "secure": localhost
+        }
+
+
+
+        Header	        What it means	                    Example
+        Host	        Domain or IP you are requesting	    localhost:3000
+        User-Agent	    Browser/app making the request	    Mozilla/5.0 Chrome/142...
+        Accept	        Types of response client can accept	text/html, application/json
+        Content-Type	Format of data being sent	        application/json, multipart/form-data
+        Authorization	Token used for authentication/login	Bearer <jwt_token>
+        Cookie	        Cookies stored in the browser	    sessionId=ab123xy
+        Referer	        URL where request came from	        https://example.com/home
+        Accept-Language	Preferred language	                en-US, my-MM
+
+
+
+=> ejs
+
+    https://ejs.co/
+
+    $ npm install ejs
+
+    mkdir views
+
+=>mongodb  
+    official (v^7.0.0)
+    https://cloud.mongodb.com/v2/685ec739c1e878041c601e9c#/overview
+
+    npm install mongodb (usage = // document = // document  https://www.mongodb.com/docs/drivers/node/current/)
+    Mogodb Atlas > Cluster > Driver
+
+    thirdparty (v^9.0.2)
+    https://www.npmjs.com/package/mongoose
+    npm i mongoose
+    
+    =>official import
+        import mongodb from "mongodb"
+
+    =>thirdparty import
+        import mongoose from "mongoose"
+
+    mongodb+srv://superuser:<db_password>@cluster0.5yebdvl.mongodb.net/
+
+
+-----------------------------------------------------
+npm install -g nodemon
+
+
+ipv4        127.0.0.1   103.47.185.115 192.168.2.24
+ipv6        ::1         ::6545454
+
+----------------------------------------------------------------------------
+=> dotenv (^17.2.4)
+    (i) https://wwww.npmjs.com/package/dotenv
+        npm i dotenv
+
+        import 'dotenv/config'
+
+    (ii) manual create 
+        .env
+
+----------------------------------------------------------------------------------
+=> bootstrap 5.3
+    (i) install
+        npm install bootstrap@5.3.8
+
+    (ii) Expose Bootstrap from node_modules
+        Express does not serve node_modules by default
+
+        = server.js
+        // Serve Bootstrap files
+        app.use("/bootstrap",express.static(path.join(__dirname,"node_modules/bootstrap/dist/")))
+
+        // this maps to /bootstrap/css/bootstrap.min.css and /bootstrap/js/bootstrap.bundle.min.css
+
+    (iii) Load Bootstrap CSS in head.ejs
+            <link href="/bootstrap/css/bootstrap.min.css" rel="stylesheet"/>
+
+    (iii) Load Bootstrap CSS in
+        <script src="/bootstrap/js/bootstrap.bundle.min.js"></script>
+----------------------------------------------------------------------------------
+=> Font Awesome 7.2
+    (i) install (https://www.npmjs.com/package/@fortawesome/fontawesome-free)
+        npm install @fortawesome/fontawesome-free@7.2.0
+
+    (ii) Expose Font Awesome from node_modules
+        Express does not serve node_modules by default
+
+        = server.js
+        // Serve Font Awesome files
+        app.use("/fontawesome",express.static(path.join(__dirname,"node_modules/@fortawesome/fontawesome-free")))
+
+        // this maps to /fontawesome/css/all.min.css
+
+    (iii) Load Font Awesome CSS in head.ejs
+            <link href="/fontawesome/css/all.min.css" rel="stylesheet"/>
+----------------------------------------------------------------------------------
+=> socket.io (v^4.8.3)
+    (i) install https://socket.io/docs/v4/server-installation/
+        npm install socket.io
+
+    (ii) Update server.js (use http server + attach Socket.IO )
+
+        import http from "http";
+        import {Server} from "socket.io";
+----------------------------------------------------------------------------------
+=>  sweetalert (v 11.26.22)
+    (i) install (https://sweetalert2.github.io/)
+        npm install sweetalert2
+
+    (ii) Expose Font Awesome from node_modules
+        Express does not serve node_modules by default
+
+        = server.js
+        // Serve Font Awesome files
+        app.use("/sweetalert2",express.static(path.join(__dirname,"node_modules/sweetalert2/dist")))
+
+        // this maps to /sweetalert2/sweetalert2.all.min.js
+
+    (iii) Load Font Awesome CSS in head.ejs
+            <script src="/sweetalert2/sweetalert2.all.min.js"></script>
+
+----------------------------------------------------------------------------------
+=>  Toastify (v 1.12.0)
+    (i) install (https://github.com/apvarun/toastify-js/blob/master/README.md)
+        npm install toastify-js
+
+
+    (ii) Expose Toastify from node_modules
+        Express does not serve node_modules by default
+
+        = server.js
+        // Serve Toastify files
+        app.use("/toastify",express.static(path.join(__dirname,"node_modules/toastify-js/src")))
+
+        // this maps to /toastify/toastify.css and /toastify/toastify.js
+
+    (iii) Load Toastify CSS in head.ejs
+            <link href="/toastify/toastify.css" rel="stylesheet"/>
+            <script src="/toastify/toastify.js"></script>
+
+----------------------------------------------------------------------------------
+=>  multer (v 2.1.1)
+    (i) install (https://www.npmjs.com/package/multer)
+            npm i multer
+
+    (ii) Create a folder
+            public/uploads
+
+    (iii) import multer from "multer"
+            import fs from "fs"
+
+
+----------------------------------------------------------------------------------
+1️⃣ app.use()
+
+app.use() is a method in Express.js used to register middleware.
+
+Here it tells Express:
+
+“Whenever a request starts with /bootstrap, serve files from a specific folder.”
+
+2️⃣ "/bootstrap"
+
+This is the URL prefix (virtual path).
+
+So in the browser you can access Bootstrap files like:
+
+/bootstrap/css/bootstrap.min.css
+/bootstrap/js/bootstrap.bundle.min.js
+
+Even though the real files are inside node_modules.
+
+3️⃣ express.static()
+
+express.static() is built-in middleware that serves static files.
+
+Static files include:
+
+CSS
+
+JavaScript
+
+Images
+
+Fonts
+
+Example file location:
+
+node_modules/bootstrap/dist/css/bootstrap.min.css
+4️⃣ path.join(__dirname, "...")
+
+This safely builds the absolute path to the folder.
+
+__dirname → current project directory
+
+"node_modules/bootstrap/dist/" → Bootstrap distribution files
+
+Result example:
+
+/project-folder/node_modules/bootstrap/dist/
+5️⃣ How it works in practice
+
+Folder structure:
+
+project
+│
+├── node_modules
+│   └── bootstrap
+│       └── dist
+│           ├── css/bootstrap.min.css
+│           └── js/bootstrap.bundle.min.js
+│
+└── app.js
+
+After adding the code, you can use Bootstrap in HTML like this:
+
+<link rel="stylesheet" href="/bootstrap/css/bootstrap.min.css">
+<script src="/bootstrap/js/bootstrap.bundle.min.js"></script>
+
+Browser requests:
+
+GET /bootstrap/css/bootstrap.min.css
+
+Express maps it to:
+
+node_modules/bootstrap/dist/css/bootstrap.min.css
+
+✅ Summary
+
+This line:
+
+Exposes Bootstrap files from node_modules
+
+Creates a public URL /bootstrap
+
+Lets your HTML load Bootstrap without copying files
+
+=> Understanding Callback
+
+    =>app.ts
+        =switching room
+            const roomid = getbutton.getAttribute('id');
+            if(!roomid) return;
+            if(roomid){
+                chatroomObj.updateRoom(roomid);
+                chatroomObj.getChats((data)=>messageuiObj.renderli(data));
+
+                // room title
+                roomtitle.textContent = roomid;
+            }
+
+
+    =>Chat.ts
+        getChats(callback:(data:chatMessage)=>void):void{
+
+            const qty = query(this.chats,where('room',"==",this.room),orderBy('createdAt'));
+            this.unsubscribe = onSnapshot(qty,(docSnap:any)=>{
+
+                docSnap.docChanges().forEach((item:any)=>{
+
+                    // console.log(item);
+
+                    if(item.type === "added"){
+                        callback(item.doc.data());
+                    }
+
+                });
+
+            });
+
+        }
+
+
+
+    => messageui.ts
+
+        renderli(dataobj:chatMessage):void{
+
+            // console.log(dataobj);
+
+            // for cdn
+            // const when = (window as any).dateFns.formatDistance(dataobj.createdAt.toDate(),new Date(),{addSuffix:true}); // {addSuffix:true} = ago
+            
+            // for package
+            const when = formatDistance(dataobj.createdAt.toDate(),new Date(),{addSuffix:true}); // {addSuffix:true} = ago
+            
+            const htmllitag = `
+                <li class="list-group-item">
+                    <span class="username">${dataobj.username}</span>
+                    <span class="message">${dataobj.message}</span>
+                    <span class="time small text-muted">${when}</span>
+                </li>
+            `;
+
+            this.ul.innerHTML += htmllitag; 
+        }
+
+        အဖြေကိုတွက်ချက်ပြီးမှ လုပ်ဆောင်စေချင်တဲ့ လုပ်ငန်းစဉ်ကို callbackထဲမှာထည့်ရေးတယ်
+        Main function ထဲမှာ လိုအပ်တဲ့နေရာမှာ callbackကိုမဖြစ်မ‌ေနပြန်ခေါ်ပေးရတယ်
+
+    ----------------------------------------------------------------------------------------------
+    1. What a Callback Actually Is
+
+A callback is simply:
+
+A function that is passed as an argument to another function, so it can be executed later.
+
+Example:
+
+function greet(name, callback) {
+    console.log("Hello " + name);
+    callback();
+}
+
+function afterGreeting() {
+    console.log("Nice to meet you");
+}
+
+greet("John", afterGreeting);
+
+Execution:
+
+Hello John
+Nice to meet you
+
+Here:
+
+afterGreeting = callback function
+
+Because it is called back later by greet().
+
+2. Why Node.js Uses Callbacks
+
+Node.js operations often take time:
+
+reading files
+
+database queries
+
+uploading files
+
+network requests
+
+So instead of returning a value immediately, the function says:
+
+“When I finish, I will call your callback.”
+
+Example:
+
+readFile("photo.jpg", function(result){
+    console.log(result);
+});
+
+Meaning:
+
+readFile finishes later
+then it calls the callback
+3. Standard Node.js Callback Pattern
+
+Most Node.js callbacks follow this rule:
+
+callback(error, result)
+
+Meaning:
+
+callback(null, result) → success
+callback(error)        → failure
+
+Example:
+
+function divide(a,b,cb){
+    if(b === 0){
+        cb("Cannot divide by zero");
+    }else{
+        cb(null, a/b);
+    }
+}
+
+divide(10,2,function(err,result){
+    if(err){
+        console.log(err);
+    }else{
+        console.log(result);
+    }
+});
+
+Output
+
+5
+4. Now Apply This Concept to Multer
+
+In Multer you write:
+
+destination: (req, file, cb) => cb(null, uploadDir)
+
+Break it down.
+
+Your function receives:
+
+req   → request
+file  → uploaded file info
+cb    → callback function
+
+Your job is to call cb() and tell Multer the result.
+
+cb(error, value)
+
+For destination, the value = folder path.
+
+So:
+
+cb(null, uploadDir)
+
+means:
+
+No error
+Use uploadDir as the folder
+5. Filename Works the Same Way
+
+Your code:
+
+filename: function (req, file, cb) {
+
+    const uniqueSuffix = `${Date.now()}-${uniquename}${ext}`;
+
+    cb(null, uniqueSuffix);
+
+}
+
+Meaning:
+
+cb(error, filename)
+
+You are telling Multer:
+
+No error
+Use this filename
+
+Example result:
+
+uploads/
+   1710430023234-my-family-photo-2026.jpg
+6. Simple Mental Model of Multer
+
+Think like this:
+
+Multer: "Where should I save this file?"
+
+Your function runs.
+
+You answer:
+cb(null, "./uploads")
+
+Multer: "OK."
+
+Then:
+
+Multer: "What should the filename be?"
+
+Your function runs.
+
+You answer:
+cb(null, "171043002-photo.jpg")
+
+Multer: "OK."
+
+Then Multer saves the file.
+
+7. Why Multer Uses Callback Instead of return
+
+Because your logic might be asynchronous.
+
+Example:
+
+filename: async function(req,file,cb){
+
+    const user = await getUserFromDB(req.userId);
+
+    const name = user.id + "-" + file.originalname;
+
+    cb(null,name);
+}
+
+If Multer used return, it could not wait for async operations.
+
+Callbacks solve this.
+
+8. The Simplest Way to Remember
+
+Normal function:
+
+return result
+
+Callback function:
+
+cb(result)
+
+With Node.js pattern:
+
+cb(error, result)
+9. Your Code in Plain English
+
+Your Multer configuration says:
+
+When a file is uploaded:
+
+1️⃣ Save it in uploadDir
+2️⃣ Generate a cleaned filename
+3️⃣ Add timestamp
+4️⃣ Return filename using cb()
