@@ -321,7 +321,18 @@ app.post('/about/edit', upload.array('images',5), async (req, res) => {
 		let aboutpage = await req.db.collection('pages').findOne({slug:"about"});
 
 		// method 1 old + new
+		// let imageurls = aboutpage.imageurls || [];
+
+		// method 2 HW (Old image deleted, only new image keep)
 		let imageurls = aboutpage.imageurls || [];
+		imageurls.forEach(imageurl => {
+			// remove extra /
+			const oldpathsafe = path.join(__dirname,"public",imageurl).replace( /^\/+/ ,"");
+			fs.unlink(oldpathsafe,(err)=>{
+				if (err) console.log("OLd image delete error:",err.message);
+			})
+		});
+		imageurls = [];
 
 
 		// new upload images
