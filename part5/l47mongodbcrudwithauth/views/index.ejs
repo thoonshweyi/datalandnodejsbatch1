@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<%- include('./layout/head.ejs')  %>
+<body>
+    
+    <%- include('./layout/nav.ejs')  %>
+
+    <div class="container">
+        <div>
+            <h2>Latest Blog Posts</h2>
+            <p class="text-muted">Total posts: <%= total %></p>
+        </div>
+
+        <!-- search -->
+        <form class="mb-3" action="" method="GET">
+            <div class="input-group">
+                <input type="text" name="q" class="form-control" placeholder="Search posts...." value="<%= q || '' %>"/>
+                <button type="submit" class="btn btn-outline-primary">Search</button>
+                <% if(q){ %>
+                    <a href="/" class="btn btn-online-secondary">Clear</a>
+                <% } %>
+            </div>
+        </form>
+
+        <% if(posts.length > 0){ %>
+            <% posts.forEach(post=>{ %>
+
+
+                <h3>
+                    <a href="/posts/<%= post.slug %>" style="text-decoration: none;"><%= post.title %></a>
+                </h3>
+
+                <small>Posted: <%= post.createdAt ? new Date(post.createdAt).toLocaleString() : "Unknown date" %></small>
+                
+                <h5><%= post.subtitle %></h5> 
+
+                <p><%= post.body %></p>
+                
+                    <a href="/posts/<%= post._id %>/edit" class="btn btn-sm btn-primary"><i class="fa-solid fa-pen-to-square"></i></a>
+                    <form class="d-inline" action="/posts/<%= post._id %>/delete" method="POST" style="display: inline;" onsubmit="return confirm('Are you sure to delete this post?')">
+                        <button type="submit" class="btn btn-sm btn-danger"><i class="fa-solid fa-trash"></i></button>
+                    </form>
+
+                <hr/>
+            <% }) %>
+
+        <% }else{ %>
+            <p>Thre are no blog posts to display.</p>
+            <a href="/posts/create">Create First Post</a>
+        <% } %>
+     
+        <!-- Pagination -->
+        <!-- http://localhost:3000/?page=2 -->
+        <!-- http://localhost:3000/?q=three --> <!-- http://localhost:3000/?q=post+three --> 
+        <div class="d-flex justify-content-center align-items-center gap-2 mt-4">
+            <!-- http://localhost:3000/?q=post%40three -->
+
+            <% if(page > 1){ %>
+                <a href="/?page=<%= page - 1 %><%= q? `&q=${encodeURIComponent(q)}` : '' %>" class="btn btn-outline-secondary">
+                    Prev
+                </a>
+            <% }  %>
+            <span class="text-muted"><%= page %> / <%= totalpages %> </span>
+            <% if(page < totalpages){ %>
+                <a href="/?page=<%= page + 1 %><%= q? `&q=${encodeURIComponent(q)}` : '' %>" class="btn btn-outline-secondary">
+                    Next
+                </a>
+            <% }  %>
+        </div>
+
+    </div>
+
+    <%- include('./layout/footer.ejs')  %>
+    <script src="/bootstrap/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+
+<!-- Encode characters such as ?= / & : @ + $ # -->
+<!-- encodeURIComponent("text?") -->
+<!-- console.log(`?x=${encodeURIComponent("text?")}`) // ?x=text%3F -->
+
+
+<!-- 🧠 Super Simple Explanation
+
+👉 Pagination appends URL so the server knows:
+
+Which page you want
+
+What filters/search you are using
+
+🧩 Without URL append (What happens)
+
+Click Next → server forgets state → resets to page 1.
+
+🧩 With URL append (Correct)
+
+Click Next → server keeps state → shows correct page. -->

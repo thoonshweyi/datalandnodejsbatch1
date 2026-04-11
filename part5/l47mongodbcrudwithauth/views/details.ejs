@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<%- include('./layout/head.ejs')  %>
+<body>
+  
+    <%- include('./layout/nav.ejs')  %>
+
+    <div class="container mt-5">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-body">
+                        <% if(post.imageURL){ %>
+                            <img src="<%= post.imageURL %>" class="img-fluid mb-3" alt="<%= post.title %>">
+                        <% } %>
+
+                        <h3><%= post.title %></h3>
+
+                        <p class="text-muted mb-2">Posted: <%= post.createdAt ? new Date(post.createdAt).toLocaleString() : "Unknown date" %></p>
+                        
+                        <p class="text-muted mb-2">Readers Online: <span id="viewercounter" class="fw-bold">0</span></p>
+
+                        <h5 class="text-secondary"><%= post.subtitle %></h5>
+                        <hr/>
+
+                        <p><%= post.body %></p>
+
+                        <div class="d-flex gap-2 mt-4">
+                            <a href="/" class="btn btn-outline-secondary">Back</a>
+                            <a href="/posts/<%= post._id %>/edit" class="btn btn-primary"><i class="fa-solid fa-pen-to-square"></i></a>
+                            <form action="/posts/<%= post._id %>/delete %>" method="POST" onsubmit="return confirm(`Are you sure you want to delete this post?`)">
+                                <button type="submit" class="btn btn-danger"><i class="fa-solid fa-trash"></i></button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-8">
+                <hr class="my-8" />
+
+                <h5>Comments</h5>
+
+                <% if(commentError){ %>
+                    <div class="alert alert-danger"><%= commentError %></div>
+                <% } %>
+
+                <form action="/posts/<%= post.slug %>/comments" method="POST" class="mb-4">
+                    <div class="mb-2">
+                        <input type="text" name="name" class="form-control" placeholder="Your name" />
+                    </div>
+
+                    <div class="mb-2">
+                        <textarea name="message" class="form-control" rows="3" placeholder="Write a comment...." ></textarea>
+                    </div>
+
+                    <div class="d-flex justify-content-end">
+                        <button type="submit" class="btn btn-primary btn-sm">Comment</button>
+                    </div>
+                </form>
+                
+                <div id="commentsbox">
+                    <% if(comments.length > 0){ %>
+
+                        <%comments.forEach(comment=>{ %>
+                            <div>
+                                <strong><%= comment.name %></strong>
+                                <small class="text-muted"><%= comment.createdAt ? new Date(comment.createdAt).toLocaleString() : "" %></small>
+                                <div><%= comment.message %></div>
+                            </div>
+                        <% }) %>
+
+                    <% }else{ %>
+                        <p class="text-muted">No comments yet.</p>
+                    <% } %>
+
+                </div>
+            </div>
+        </div>
+    </div>
+    <%- include('./layout/footer.ejs')  %>
+    <script src="/bootstrap/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        const ioClient = io();
+        const pageslug = "<%= post.slug %>";
+
+        ioClient.emit("join-post",pageslug);
+
+        ioClient.on("post:viewers",(payload)=>{
+            if(pageslug != payload.slug) return;
+
+            const viewercounter = document.getElementById('viewercounter');
+            if(viewercounter) viewercounter.textContent = payload.count;
+        });
+
+        ioClient.on('comments:created',(payload)=>{
+            if(pageslug != payload.slug) return;
+
+            const cmtbox = document.getElementById('commentsbox');
+            const comment = payload.comment;
+
+            // create new div
+            const div = document.createElement('div');
+            div.innerHTML = `
+                <strong>${escapseHtml(comment.name)}</strong>
+                <small class="text-muted">${ new Date(comment.createdAt).toLocaleString() }</small>
+                <div >${ escapseHtml(comment.message) }</div>
+            `;
+
+            // add to top (prepend)
+            cmtbox.prepend(div);
+        });
+
+        // pagehide event can also use.
+        window.addEventListener('beforeunload',()=>{
+            ioClient.emit('leave-post',pageslug);
+        });
+
+        // helper
+        function escapseHtml(text){
+            return String(text)
+            .replaceAll("&","&amp;")
+            .replaceAll("<","&lt;")
+            .replaceAll(">","&gt;")
+            .replaceAll('"',"&quot;")
+            .replaceAll("'","&#39;");
+        }
+
+       
+
+    </script>
+</body>
+</html>

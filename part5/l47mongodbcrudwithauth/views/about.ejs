@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<%- include('./layout/head.ejs')  %>
+<body>
+     <%- include('./layout/nav.ejs')  %>
+
+    <div class="container mt-4">
+        <h1><%= aboutpage.title %></h1>
+        <p><%= aboutpage.body %></p>
+
+        <% if(aboutpage.imageurls && aboutpage.imageurls.length > 0){ %>
+            <div class="row g-3 mb-3">
+
+                <% aboutpage.imageurls.forEach(imageurl =>{ %>
+                    <div class="col-md-2">
+                        <img src="<%= imageurl %>" class="img-fluid rounded shadow-sm" alt="about image">
+                    </div>
+                <% }) %>
+             
+            </div>
+        <% } %>
+
+        <a href="/about/edit" class="btn btn-primary btn-sm rounded-0">Edit About</a>
+
+     
+    </div>
+    
+    <%- include('./layout/footer.ejs')  %>
+    <script src="/bootstrap/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

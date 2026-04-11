@@ -197,7 +197,51 @@ const upload = multer({
 	}
 })
 
+// => Auth Routes 
 
+// register
+app.get('/register',(req,res)=>{
+	return res.render("register",{
+		title: "Register",
+		error: null,
+		formData: null
+	});
+});
+
+app.post('/register',async (req,res)=>{
+	try{
+
+	}catch(error){
+		console.error("Register Error: ",error);
+		res.status(500).render("error", { 
+			title: "Server Error",
+			message: `Failed to register: ${error.message}`
+		});
+	}
+});
+
+// login
+app.get('/login',(req,res)=>{
+	return res.render("login",{
+		title: "Login",
+		error: null,
+		formData: null
+	});
+});
+
+app.post('/login',async (req,res)=>{
+	try{
+
+	}catch(error){
+		console.error("Login Error: ",error);
+		res.status(500).render("error", { 
+			title: "Server Error",
+			message: `Failed to login: ${error.message}`
+		});
+	}
+});
+
+// => Normal Routes
 // Get route (with search + pagination)
 app.get('/', async(req, res) => {
 
