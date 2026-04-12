@@ -260,6 +260,74 @@ ipv6        ::1         ::6545454
 
 
 ----------------------------------------------------------------------------------
+=>  bcrypt (v ^6.0.0)
+    (i) install (https://www.npmjs.com/package/bcrypt)
+            npm i bcrypt
+
+    (ii) import
+            import bcrypt from "bcrypt";
+
+----------------------------------------------------------------------------------
+=>  express-session (v ^1.19.0)
+    (i) install (https://www.npmjs.com/package/express-session)
+            npm i express-session
+
+    (ii) import
+            import session from "express-session";
+    
+    (iii) update .env
+            SESSION_SECRET=123456789
+
+    (iv) store session
+            app.use(session({
+                secret: 'keyboard cat',
+                resave: false,
+                saveUninitialized: true,
+                cookie: function(req) {
+                    var match = req.url.match(/^\/([^/]+)/);
+                    return {
+                    path: match ? '/' + match[1] : '/',
+                    httpOnly: true,
+                    secure: req.secure || false,
+                    maxAge: 60000
+                    }
+                }
+            }))
+
+            (or)
+
+            app.use(session({
+                secret: 'keyboard cat',
+                resave: false,
+                saveUninitialized: true,
+                cookie: {
+                    maxAge: 1000 * 60 * 60 * 24, // 60000 = 1 day
+                    httpOnly: true
+                }
+            }))
+
+----------------------------------------------------------------------------------
+=>  connect-mogo (v ^6.0.0)
+    (i) install (https://www.npmjs.com/package/connect-mongo)
+            npm i connect-mongo
+
+    (ii) import
+            import MongoStore from "connect-mongo";
+
+    (iii) store mongodb
+            app.use(express.session({
+                store: MongoStore.create({
+                    mongoUrl: dbURL,
+                    dbName: dbName,
+                    collectionName:  "sessions"
+                })
+            }));
+
+
+
+
+
+
 1️⃣ app.use()
 
 app.use() is a method in Express.js used to register middleware.

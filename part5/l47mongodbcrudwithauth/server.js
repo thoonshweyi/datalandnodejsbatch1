@@ -6,6 +6,11 @@ import morgan from "morgan";
 import {MongoClient, ObjectId} from "mongodb"
 import {Server} from "socket.io";
 import multer from "multer"
+
+import bcrypt from "bcrypt";
+import session from "express-session";
+import MongoStore from "connect-mongo";
+
 import fs from "fs"
 
 // express app
@@ -143,6 +148,23 @@ async function connectToMongoDB(){
 }
 connectToMongoDB()
 
+// Session
+ app.use(session({
+	secret: process.env.SESSION_SECRET || "secretkey",
+	resave: false, // don't save session if unmodified
+	saveUninitialized: false, // don't create session until something stored
+	store: MongoStore.create({
+		mongoUrl: dbURL,
+		dbName: dbName,
+		collectionName:  "sessions"
+	}),
+	cookie: {
+		maxAge: 1000 * 60 * 60 * 24, // 86,400,000 = 1 day, 1000 miliseconds per second x 60 seconds per minutes x 60 minutes per hour x 24 hours per day
+		httpOnly: true
+	}
+}))
+
+
 
 // Database Middleware
 app.use((req,res,next)=>{
@@ -153,6 +175,20 @@ app.use((req,res,next)=>{
 
 	next();
 });
+
+// Make user data available in all EJS views NusskwqEW
+app.use((req,res,next)=>{
+	console.log(res.locals);
+
+	res.locals.currentuser = req.session.user || null;
+	console.log(res.locals);
+	console.log(req.session.user);
+
+
+	next();
+
+});
+
 
 // My Family @ Photo 2026!!.jpg to 1773330136527-my-family-photo-2026.jpg
 
@@ -234,11 +270,17 @@ app.post('/login',async (req,res)=>{
 
 	}catch(error){
 		console.error("Login Error: ",error);
-		res.status(500).render("error", { 
+		return res.status(500).render("error", { 
 			title: "Server Error",
 			message: `Failed to login: ${error.message}`
 		});
 	}
+});
+
+app.post('/logout',async (req,res)=>{
+	// remove session
+
+	return res.redirect('/login');
 });
 
 // => Normal Routes
@@ -281,7 +323,7 @@ app.get('/', async(req, res) => {
 
 		const totalpages = Math.max(Math.ceil(total/limit),1);
 
-		res.render('index',{ 
+		return res.render('index',{ 
 			title: "Home Page", 
 			posts: posts,
 			postsCount: posts.length,
@@ -295,7 +337,7 @@ app.get('/', async(req, res) => {
 	}catch(error){
 		console.error("Error fetching posts from MongoDB.",error)
 		
-		res.status(500).render('error',{
+		return res.status(500).render('error',{
 			title: "Database Error",
 			message: "Failed to load posts from database. Please try again later."
 		})
@@ -427,7 +469,7 @@ app.post('/about/edit', upload.array('images',5), async (req, res) => {
 	
 	}catch(error){
 		console.error("Error updating About Page",error)
-		res.status(500).render('error',{
+		return res.status(500).render('error',{
 			title: "Server Error",
 			message: `Failed to update about page ${error.message}`
 		})
@@ -836,7 +878,7 @@ app.post("/posts/:id/delete",async(req,res)=>{
 
 // 404 (note : that must be bottom line) **
 app.use((req, res) => {
-	res.status(404).render("404", { title: '404' })
+	return res.status(404).render("404", { title: '404' })
 })
 
 
