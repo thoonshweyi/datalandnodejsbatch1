@@ -234,6 +234,14 @@ const upload = multer({
 
 // => Auth Routes 
 
+// auth check
+function isAuth(req,res,next){
+	if(!req.session.user){
+		return res.redirect('/login');
+	}
+	next();
+}
+
 // register
 app.get('/register',(req,res)=>{
 	return res.render("register",{
@@ -477,7 +485,7 @@ app.get('/about', async (req, res) => {
 	}
 })
 
-app.get('/about/edit', async (req, res) => {
+app.get('/about/edit',isAuth, async (req, res) => {
 	try{
 		let aboutpage = await req.db.collection('pages').findOne({slug:"about"});
 
@@ -495,7 +503,7 @@ app.get('/about/edit', async (req, res) => {
 	}
 })
 
-app.post('/about/edit', upload.array('images',5), async (req, res) => {
+app.post('/about/edit',isAuth, upload.array('images',5), async (req, res) => {
 	try{
 		const {title,body} = req.body;
 
@@ -578,7 +586,7 @@ app.get('/about-us', (req, res) => {
 // End About Page
 
 
-app.get('/posts/create', (req, res) => {
+app.get('/posts/create',isAuth, (req, res) => {
 	res.render("create", { 
 		title: "Create Page",
 		error: null,
@@ -586,7 +594,7 @@ app.get('/posts/create', (req, res) => {
 	});
 })
 
-app.post('/posts/create', upload.single('image'), async (req,res)=>{
+app.post('/posts/create',isAuth, upload.single('image'), async (req,res)=>{
 	try{
 		const {title,subtitle,body} = req.body;
 		console.log(title,subtitle,body)
@@ -718,19 +726,24 @@ app.get("/posts/:slug",async(req,res)=>{
 });
 // End Single Post Detail Page (by slug)
 
-// Comment Start
-app.post("/posts/:slug/comments",async(req,res)=>{
+//=> Comment Start
+
+// comment view
+app.post("/posts/:slug/comments",isAuth,async(req,res)=>{
 
 	try{
 		const {slug} = req.params;
-		const {name, message} = req.body;
+		const { message} = req.body;
+
+		const user = req.session.user || null;
+
 		const post = await req.db.collection('posts').findOne({slug});
 
 		if(!post){
 			return res.status(404).render("404",{title: "404"});
 		}
 
-		if(!name || !message){
+		if(!message){
 			const comments =   await req.db.collection('comments')
 				.find({postId: post._id})
 				.sort({createdAt: -1})
@@ -740,13 +753,15 @@ app.post("/posts/:slug/comments",async(req,res)=>{
 				title: post.title,
 				post,
 				comments,
-				commentError: "Name and comment are required"
+				commentError: "Comment is required",
+				user
 			})
 		}
 
 		const newcomment = {
 			postId: post._id,
-			name: name.trim(),
+			userId: new ObjectId(user._id),
+			name: user.username,
 			message: message.trim(),
 			createdAt: new Date()
 		}
@@ -773,10 +788,172 @@ app.post("/posts/:slug/comments",async(req,res)=>{
 		})
 	}
 });
+
+// comment edit
+app.post("/comments/:id/edit",isAuth,async(req,res)=>{
+	try{
+		const {id} = req.params;
+		const {title,subtitle,body} = req.body
+		if(!ObjectId.isValid(id)){
+			// THROW ERROR
+			return res.status(400).render("error",{
+				title: "Invalid ID",
+				error: `Post ID is not valid`,
+			});
+		}
+
+	
+
+		// reload old post to refill form
+
+		// const post = await db.collection('posts').findOne({_id: new ObjectId(id)});
+		// const post = await req.db.collection('posts').findOne({_id: new ObjectId(id)});
+		
+		const postCol = req.db.collection('posts');
+		const _id = new ObjectId(id);
+
+		const existing = await postCol.findOne({_id});
+
+		if(!existing) return res.status(404).render("404",{title: "404"});
+
+		if(!title || !subtitle || !body){
+			return res.render("edit", { 
+				title: "Edit Post",
+				error: `All fields are required`,
+				post: {
+					...existing,
+					title,
+					subtitle,
+					body
+				}
+			});
+		}
+
+
+		let setnewslug = existing.slug; // post-five to post-six
+		const newbaseslug = slugify(title);
+
+		if(newbaseslug && title.trim() !== existing.title){
+			setnewslug = await uniqueslug(postCol,newbaseslug,_id);
+		}
+
+		// image logic
+		let imageURL = existing.imageURL || null;
+
+		if(req.file){
+			imageURL = `/uploads/${req.file.filename}`;
+
+			// delete old file
+			if(existing.imageURL){
+				// existing.imageURL = `/uploads/1773590516998-adorable-puppy-sitting-on-green-grass-photo.jpg`
+				// const oldpath = path.join(__dirname,"public",existing.imageURL); // **** "l44mongodbcrudwithimage/public//uploads/1773590516998-adorable-puppy-sitting-on-green-grass-photo.jpg"
+				
+				// remove extra /
+				const oldpathsafe = path.join(__dirname,"public",existing.imageURL).replace( /^\/+/ ,""); // // **** "l44mongodbcrudwithimage/public//uploads/1773590516998-adorable-puppy-sitting-on-green-grass-photo.jpg"
+				fs.unlink(oldpathsafe,(err)=>{
+					if (err) console.log("OLd image delete error:",err.message);
+				})
+			}
+		}	
+
+		const updateData = {
+			title: title.trim(),
+			subtitle: subtitle.trim(),
+			slug: setnewslug,
+			body: body.trim(),
+			imageURL,
+			updatedAt: new Date()
+		};
+
+		const result = await req.db.collection("posts").updateOne(
+			{_id:new ObjectId(id)},
+			{$set: updateData}
+		);
+
+		if(result.matchedCount === 0){
+			return res.status(404).render("404",{title: "404"});
+		}
+
+		// Socket.IO 
+		req.io.emit('posts:updated',{
+			id,
+			title: updateData.title,
+			slug: setnewslug,
+			imageURL: updateData.imageURL,
+			updatedAt: updateData.updatedAt
+		});
+
+		// redirect to home
+		// return res.redirect('/');
+
+		return res.redirect(`/posts/${setnewslug}`);
+		
+	}catch(error){
+		console.error("Error uptading page",error);
+		res.status(500).render("error",{
+			title: "Server Error",
+			error: `Failed to update post: ${error.message}`,
+		})
+	}
+})
+
+// comment delete
+app.post("/comments/:id/delete",isAuth,async(req,res)=>{
+	try{
+		const {id} = req.params;
+
+		if(!ObjectId.isValid(id)){
+			// THROW ERROR
+			res.status(400).render("error",{
+				title: "Invalid ID",
+				error: `Comment ID is not valid`,
+			})
+		}
+
+		const _id = new ObjectId(id);
+		const comment = await req.db.collection("comments").findOne({_id});
+		if(!comment) res.status(404).render('404',{title: "404"});
+
+		// allow only owner
+		if(!comment.userId && comment.userId.toString() !== req.session.user._id){
+			return res.status(403).render("error",{
+				title: "Forbidden",
+				error: `You can delete only your own comments.`,
+			})
+		}
+
+		const result = await req.db.collection('comments').deleteOne({_id});
+
+		if(result.deletedCount === 0){
+			return res.status(404).render("404",{title: "404"});
+		}
+
+		// Socket.IO 
+		req.io.emit('comments:deleted',{id});
+
+		// redirect back to the same post
+		const post = await req.db.collection('posts').findOne({_id: comment.postId})
+
+		if(!post){
+			return res.redirect("/");
+		}
+
+		// redirect back to the same post
+		return res.redirect(`/posts/${post.slug}`);
+		
+	}catch(error){
+		console.error("Error deleting comment",error);
+		res.status(500).render("error",{
+			title: "Server Error",
+			error: `Failed to load delete comment: ${error.message}`,
+		})
+	}
+})
+
 // Comment End
 
 // Edit Start
-app.get("/posts/:id/edit",async(req,res)=>{
+app.get("/posts/:id/edit",isAuth,async(req,res)=>{
 	try{
 		const {id} = req.params;
 
@@ -810,7 +987,7 @@ app.get("/posts/:id/edit",async(req,res)=>{
 
 
 
-app.post("/posts/:id/edit", upload.single('image'),async(req,res)=>{
+app.post("/posts/:id/edit",isAuth, upload.single('image'),async(req,res)=>{
 	try{
 		const {id} = req.params;
 		const {title,subtitle,body} = req.body
@@ -918,7 +1095,7 @@ app.post("/posts/:id/edit", upload.single('image'),async(req,res)=>{
 })
 
 // Delete Start
-app.post("/posts/:id/delete",async(req,res)=>{
+app.post("/posts/:id/delete",isAuth,async(req,res)=>{
 	try{
 		const {id} = req.params;
 

@@ -44,30 +44,64 @@
                 <% if(commentError){ %>
                     <div class="alert alert-danger"><%= commentError %></div>
                 <% } %>
+           
+                <% if(currentuser){ %>
+                    <form action="/posts/<%= post.slug %>/comments" method="POST" class="mb-4">
+                        <div class="mb-2">
+                            <textarea name="message" class="form-control" rows="3" placeholder="Write a comment...." ></textarea>
+                        </div>
 
-                <form action="/posts/<%= post.slug %>/comments" method="POST" class="mb-4">
-                    <div class="mb-2">
-                        <input type="text" name="name" class="form-control" placeholder="Your name" />
-                    </div>
+                        <div class="d-flex justify-content-end">
+                            <button type="submit" class="btn btn-primary btn-sm">Comment</button>
+                        </div>
+                    </form>
+                <% }else{ %>
+                    <p class="text-muted">
+                        Please <a href="/login">login</a> to comment.
+                    </p>
+                <% } %>
 
-                    <div class="mb-2">
-                        <textarea name="message" class="form-control" rows="3" placeholder="Write a comment...." ></textarea>
-                    </div>
-
-                    <div class="d-flex justify-content-end">
-                        <button type="submit" class="btn btn-primary btn-sm">Comment</button>
-                    </div>
-                </form>
                 
                 <div id="commentsbox">
                     <% if(comments.length > 0){ %>
-
                         <%comments.forEach(comment=>{ %>
-                            <div>
-                                <strong><%= comment.name %></strong>
-                                <small class="text-muted"><%= comment.createdAt ? new Date(comment.createdAt).toLocaleString() : "" %></small>
-                                <div><%= comment.message %></div>
+                            <div id="comment-box-<%= comment._id %>" class="border rounded p-2 mb-2">
+                                <!-- normal view mode  -->
+                                <div id="comment-view-<%= comment._id %>">
+                                    <strong><%= comment.name %></strong>
+                                    <small class="text-muted"><%= comment.createdAt ? new Date(comment.createdAt).toLocaleString() : "" %></small>
+                                    <div><%= comment.message %></div>
+
+                                    <% if(currentuser && comment.userId && comment.userId.toString() == currentuser._id){ %>
+                                        <div class="d-flex justify-content-end gap-2 mt-2">
+                                            <button type="button" class="btn btn-sm btn-primary" onclick="showeditform('<%= comment._id %>')">Edit</button>
+                                            <form action="/comments/<%= comment._id %>/delete" method="POST">
+                                                <button type="submit" class="btn btn-sm btn-danger">Delete</button>   
+                                            </form>
+                                        </div>
+                                    <% } %>
+
+                                </div>
+
+                                <!-- edit mode -->
+                                <% if(currentuser && comment.userId && comment.userId.toString() == currentuser._id){ %>
+                                <div id="comment-edit-<%= comment._id %>" class="mt-2" style="display: none;">
+                                    <form action="" method="">
+                                        <div>
+                                            <textarea name="editmessage" id="" class="form-control" rows="2"><%= comment.message %></textarea>
+                                        </div>
+
+                                        <div class="d-flex justify-content-end gap-2 mt-2">
+                                            <button type="button" class="btn btn-sm btn-secondary" onclick="hideeditform('<%= comment._id %>')">Cancel</button>
+                                            <button type="submit" class="btn btn-sm btn-success">Save</button>
+                                        </div>
+                                    </form>
+                                </div>
+                                <% } %>
+
                             </div>
+
+                          
                         <% }) %>
 
                     <% }else{ %>
@@ -127,7 +161,26 @@
             .replaceAll("'","&#39;");
         }
 
-       
+
+        // Start comment view/edit mode
+        function showeditform(commentid){
+            const viewbox = document.getElementById(`comment-view-${commentid}`);
+            const editbox = document.getElementById(`comment-edit-${commentid}`);
+
+            if(viewbox) viewbox.style.display = "none";
+            if(editbox) editbox.style.display = "block";
+
+
+        }
+        // End comment view/edit mode
+        function hideeditform(commentid){
+            console.log('hay');
+            const viewbox = document.getElementById(`comment-view-${commentid}`);
+            const editbox = document.getElementById(`comment-edit-${commentid}`);
+
+            if(viewbox) viewbox.style.display = "block";
+            if(editbox) editbox.style.display = "none";
+        }
 
     </script>
 </body>

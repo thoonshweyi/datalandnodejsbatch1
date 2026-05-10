@@ -20,8 +20,9 @@
             </div>
         <% } %>
 
-        <a href="/about/edit" class="btn btn-primary btn-sm rounded-0">Edit About</a>
-
+        <%  if(currentuser){ %>
+            <a href="/about/edit" class="btn btn-primary btn-sm rounded-0">Edit About</a>
+        <%  } %>
      
     </div>
     
