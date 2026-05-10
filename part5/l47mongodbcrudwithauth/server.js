@@ -176,7 +176,7 @@ app.use((req,res,next)=>{
 	next();
 });
 
-// Make user data available in all EJS views NusskwqEW
+// Make user data available in all EJS views Middleware
 app.use((req,res,next)=>{
 	console.log(res.locals);
 
@@ -186,7 +186,6 @@ app.use((req,res,next)=>{
 
 
 	next();
-
 });
 
 
@@ -246,6 +245,56 @@ app.get('/register',(req,res)=>{
 
 app.post('/register',async (req,res)=>{
 	try{
+		const {username,email,password,cfmpassword} = req.body;
+		
+		if(!username || !email || !password || !cfmpassword){
+			return res.render("register",{
+				title: "Register",
+				error: "All fields are required",
+				formData: req.body
+			});
+		}
+
+		if(password !== cfmpassword){
+			return res.render("register",{
+				title: "Register",
+				error: "Password and Confirm Password do not match",
+				formData: req.body
+			});
+		}
+
+		const existinguser = await req.db.collection('users').findOne({
+			email: email.trim().toLowerCase()
+		});
+
+		if(existinguser){
+			return res.render("register",{
+				title: "Register",
+				error: "Email already exists",
+				formData: req.body
+			});
+		}
+
+		const hashedpassword = await bcrypt.hash(password,10); // 10 does not mean password length. salt rounds or cost factor
+
+		const newuser = {
+			username: username.trim(),
+			email: email.trim().toLowerCase(),
+			password: hashedpassword,
+			createdAt: new Date()
+		};
+
+		const result = await req.db.collection("users").insertOne(newuser);
+
+		// Store user data INFO session after successful registration
+		req.session.user = {
+			_id: result.insertedId.toString(),
+			username: newuser.username,
+			email: newuser.email
+		}
+
+		return res.redirect("/");
+
 
 	}catch(error){
 		console.error("Register Error: ",error);
@@ -267,6 +316,46 @@ app.get('/login',(req,res)=>{
 
 app.post('/login',async (req,res)=>{
 	try{
+		const {email,password} = req.body;
+		
+		if(!email || !password){
+			return res.render("login",{
+				title: "Login",
+				error: "Email and password are required",
+				formData: req.body
+			});
+		}
+
+		const existinguser = await req.db.collection('users').findOne({
+			email: email.trim().toLowerCase()
+		});
+
+		if(!existinguser){
+			return res.render("login",{
+				title: "Login",
+				error: "Invalid email or password",
+				formData: req.body
+			});
+		}
+
+		const ismatch = await bcrypt.compare(password,existinguser.password);
+
+		if(!ismatch){
+			return res.render("login",{
+				title: "Login",
+				error: "Invalid email or password",
+				formData: req.body
+			});
+		}
+
+		// Store user data INFO session after successful registration
+		req.session.user = {
+			_id: existinguser._id.toString(),
+			username: existinguser.username,
+			email: existinguser.email
+		}
+
+		return res.redirect("/");
 
 	}catch(error){
 		console.error("Login Error: ",error);
@@ -279,8 +368,14 @@ app.post('/login',async (req,res)=>{
 
 app.post('/logout',async (req,res)=>{
 	// remove session
+	req.session.destroy((err)=>{
+		if(err){
+			console.log("Logout error: ",err.message);
+		}
 
-	return res.redirect('/login');
+		res.redirect("/login")
+	});
+
 });
 
 // => Normal Routes
@@ -323,7 +418,7 @@ app.get('/', async(req, res) => {
 
 		const totalpages = Math.max(Math.ceil(total/limit),1);
 
-		return res.render('index',{ 
+		res.render('index',{ 
 			title: "Home Page", 
 			posts: posts,
 			postsCount: posts.length,
@@ -1542,3 +1637,40 @@ process.on("SIGINT",async ()=>{
 // }
 
 // ✔ Grouped by field name
+
+
+// -------------------------------------------------------------------
+// 1. The Cache "Shortcut" (Fast Network)
+// When the network is fast and the cache is fresh, the browser is very efficient.
+
+// It fetches the HTML for /.
+
+// It sees the CSS/JS files and realizes it already has them.
+
+// It often skips looking for "extra" files (like the Favicon or Chrome DevTools metadata) if the session feels stable and everything loaded instantly.
+
+// Because no background files were requested, your middleware only ran once.
+
+// 2. The "Double Check" (Slow Network)
+// When you simulate a slow network or have a "cold" cache:
+
+// The browser has to wait longer for the HTML to arrive.
+
+// During that waiting period or right after a slow load, the browser's background processes (like Chrome's DevTools or the system that looks for site icons) often "wake up" and try to fetch metadata to see why things are hanging or to provide more info.
+
+// In your slow log, we see this line:
+
+// GET /.well-known/appspecific/com.chrome.devtools.json 404
+
+// This specific request is the culprit. It is a second, separate hit to your server.
+
+// Why the Middleware runs twice
+// Your middleware is defined like this:
+
+// JavaScript
+// app.use((req, res, next) => {
+//     console.log(res.locals); // This runs for EVERY request
+//     // ...
+//     next();
+// });
+// Because .well-known/.../com.chrome.devtools.json is not a file in your public folder and not a route you defined, it "falls through" your static middleware and hits your custom middleware, triggering the console log. Then, it finally hits the 404 handler at the bottom.

@@ -13,7 +13,7 @@
 
                 <% if(currentuser){ %>
                     <li class="nav-item"><a href="/posts/create"  class="nav-link">Create Post</a></li>
-                    <li class="nav-item"><span class="navbar-text">Hello, Aungn Aung</span></li>
+                    <li class="nav-item"><span class="navbar-text">Hello, <%= currentuser.username %></span></li>
                     <li class="nav-item">
                         <form action="/logout" method="POST" class="d-inine">
                             <button type="submit" class="btn btn-danger btn-sm">Logout</button>
