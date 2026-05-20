@@ -70,7 +70,7 @@
                                 <div id="comment-view-<%= comment._id %>">
                                     <strong><%= comment.name %></strong>
                                     <small class="text-muted"><%= comment.createdAt ? new Date(comment.createdAt).toLocaleString() : "" %></small>
-                                    <div><%= comment.message %></div>
+                                    <div id="comment-text-<%= comment._id %>"><%= comment.message %></div>
 
                                     <% if(currentuser && comment.userId && comment.userId.toString() == currentuser._id){ %>
                                         <div class="d-flex justify-content-end gap-2 mt-2">
@@ -141,48 +141,37 @@
             div.id = `comment-box-${comment._id}`;
             div.className = "border rounded p-2 mb-2"
             div.innerHTML = `
-                ${(currentuser && comment.userId && comment.userId.toString() == currentuser._id) ? `
                 <div id="comment-view-${comment._id}">
                     <strong>${escapseHtml(comment.name)}</strong>
                     <small class="text-muted">${ new Date(comment.createdAt).toLocaleString() }</small>
-                    <div >${ escapseHtml(comment.message) }</div>
-
-                    <div class="d-flex justify-content-end gap-2 mt-2">
-                        <button type="button" class="btn btn-sm btn-primary" onclick="showeditform('${comment._id}')">Edit</button>
-                        <form action="/comments/${comment._id}/delete" method="POST">
-                            <button type="submit" class="btn btn-sm btn-danger">Delete</button>   
-                        </form>
-                    </div>
-                </div>
-                ` : ""};
-            `;
-
-
-            const editDiv = document.createElement('div')
-            if((currentuser && comment.userId && comment.userId.toString() == currentuser._id)){
-            editDiv.innerHTML = `
-                <div id="comment-edit-${comment._id}" class="mt-2" style="display: none;">
-                    <form action="/comments/${comment._id}/edit" method="POST">
-                        <div>
-                            <textarea name="editmessage" id="" class="form-control" rows="2">${comment.message}</textarea>
-                        </div>
-
-                        <div class="d-flex justify-content-end gap-2 mt-2">
-                            <button type="button" class="btn btn-sm btn-secondary" onclick="hideeditform('${comment._id}')">Cancel</button>
-                            <button type="submit" class="btn btn-sm btn-success">Save</button>
-                        </div>
-                    </form>
+                    <div id="comment-text-${comment._id}">${ escapseHtml(comment.message) }</div>
                 </div>
             `;
-            }
-            div.append(editDiv);
-
 
             // add to top (prepend)
             cmtbox.prepend(div);
-
-   
         });
+
+        // COMMENT updateds
+        ioClient.on('comments:updated',(payload)=>{
+            const comment = payload.comment;
+
+            const commentText = document.getElementById(`comment-text-${comment._id}`);
+
+            if(commentText){
+                commentText.textContent = comment.message;
+            }
+        });
+
+          // COMMENT deleted
+        ioClient.on('comments:deleted',(payload)=>{
+            const commentbox = document.getElementById(`comment-box-${payload.commentId}`);
+       
+            if(commentbox){
+                commentbox.remove();
+            }
+        });
+
 
         // pagehide event can also use.
         window.addEventListener('beforeunload',()=>{

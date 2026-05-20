@@ -812,8 +812,8 @@ app.post("/comments/:id/edit",isAuth,async(req,res)=>{
 		if(!comment) return res.status(404).render("404",{title: "404"});
 
 		// update only comment owner
-		console.log(comment.userId, comment.userId.toString() !== req.session.user_id)
-		if(!comment.userId || comment.userId.toString() !== req.session.user_id){
+		console.log(comment.userId, comment.userId.toString() !== req.session.user._id)
+		if(!comment.userId || comment.userId.toString() !== req.session.user._id){
 			return res.status(403).render("error",{
 				title: "Forbidden",
 				error: `You can update only your own comment.`,
@@ -841,8 +841,8 @@ app.post("/comments/:id/edit",isAuth,async(req,res)=>{
 		req.io.to(`post:${post.slug}`).emit('comments:updated',{
 			comment: {
 				_id: comment._id.toString(),
-				message: comment.message,
-				updatedAt: comment.updatedAt
+				message: editmessage.trim(),
+				updatedAt: new Date()
 			}
 		});
 
@@ -891,8 +891,7 @@ app.post("/comments/:id/delete",isAuth,async(req,res)=>{
 			return res.status(404).render("404",{title: "404"});
 		}
 
-		// Socket.IO 
-		req.io.emit('comments:deleted',{id});
+
 
 		// redirect back to the same post
 		const post = await req.db.collection('posts').findOne({_id: comment.postId})
@@ -900,6 +899,11 @@ app.post("/comments/:id/delete",isAuth,async(req,res)=>{
 		if(!post){
 			return res.redirect("/");
 		}
+
+		// Socket.IO remove deleted comment from all users viewing this post
+		req.io.to(`post:${post.slug}`).emit('comments:deleted',{
+			commentId: comment._id.toString()
+		});
 
 		// redirect back to the same post
 		return res.redirect(`/posts/${post.slug}`);
