@@ -743,7 +743,7 @@ app.post("/posts/:slug/comments",isAuth,async(req,res)=>{
 			return res.status(404).render("404",{title: "404"});
 		}
 
-		if(!message){
+		if(!message || !message.trim()){
 			const comments =   await req.db.collection('comments')
 				.find({postId: post._id})
 				.sort({createdAt: -1})
@@ -766,20 +766,23 @@ app.post("/posts/:slug/comments",isAuth,async(req,res)=>{
 			createdAt: new Date()
 		}
 
-		await req.db.collection('comments').insertOne(newcomment);
+		const result = await req.db.collection('comments').insertOne(newcomment);
 
+		const savedComment = {
+			_id: result.insertedId.toString(),
+			name: newcomment.name,
+			message: newcomment.message,
+			createdAt: newcomment.createdAt
+		}
+		
 		// Real-time: send to people who are on this single post
 		req.io.to(`post:${slug}`).emit('comments:created',{
 			slug,
-			comment:{
-				name: newcomment.name,
-				message: newcomment.message,
-				createdAt: newcomment.createdAt
-			}
-
+			comment: savedComment
 		})
 
-		return res.redirect(`/posts/${slug}`)
+		return res.redirect(`/posts/${slug}`);
+
 	}catch(error){
 		console.error("Error fetching single post: ",error);
 		res.status(500).render("error",{
@@ -793,106 +796,66 @@ app.post("/posts/:slug/comments",isAuth,async(req,res)=>{
 app.post("/comments/:id/edit",isAuth,async(req,res)=>{
 	try{
 		const {id} = req.params;
-		const {title,subtitle,body} = req.body
+		const {editmessage} = req.body
 		if(!ObjectId.isValid(id)){
 			// THROW ERROR
 			return res.status(400).render("error",{
 				title: "Invalid ID",
-				error: `Post ID is not valid`,
+				error: `Comment ID is not valid`,
 			});
 		}
 
-	
-
-		// reload old post to refill form
-
-		// const post = await db.collection('posts').findOne({_id: new ObjectId(id)});
-		// const post = await req.db.collection('posts').findOne({_id: new ObjectId(id)});
-		
-		const postCol = req.db.collection('posts');
 		const _id = new ObjectId(id);
 
-		const existing = await postCol.findOne({_id});
+		const comment = await req.db.collection('comments').findOne({_id});
 
-		if(!existing) return res.status(404).render("404",{title: "404"});
+		if(!comment) return res.status(404).render("404",{title: "404"});
 
-		if(!title || !subtitle || !body){
-			return res.render("edit", { 
-				title: "Edit Post",
-				error: `All fields are required`,
-				post: {
-					...existing,
-					title,
-					subtitle,
-					body
-				}
+		// update only comment owner
+		console.log(comment.userId, comment.userId.toString() !== req.session.user_id)
+		if(!comment.userId || comment.userId.toString() !== req.session.user_id){
+			return res.status(403).render("error",{
+				title: "Forbidden",
+				error: `You can update only your own comment.`,
 			});
 		}
 
 
-		let setnewslug = existing.slug; // post-five to post-six
-		const newbaseslug = slugify(title);
-
-		if(newbaseslug && title.trim() !== existing.title){
-			setnewslug = await uniqueslug(postCol,newbaseslug,_id);
-		}
-
-		// image logic
-		let imageURL = existing.imageURL || null;
-
-		if(req.file){
-			imageURL = `/uploads/${req.file.filename}`;
-
-			// delete old file
-			if(existing.imageURL){
-				// existing.imageURL = `/uploads/1773590516998-adorable-puppy-sitting-on-green-grass-photo.jpg`
-				// const oldpath = path.join(__dirname,"public",existing.imageURL); // **** "l44mongodbcrudwithimage/public//uploads/1773590516998-adorable-puppy-sitting-on-green-grass-photo.jpg"
-				
-				// remove extra /
-				const oldpathsafe = path.join(__dirname,"public",existing.imageURL).replace( /^\/+/ ,""); // // **** "l44mongodbcrudwithimage/public//uploads/1773590516998-adorable-puppy-sitting-on-green-grass-photo.jpg"
-				fs.unlink(oldpathsafe,(err)=>{
-					if (err) console.log("OLd image delete error:",err.message);
-				})
+		await req.db.collection('comments').updateOne(
+			{_id},
+			{
+				$set:{
+					message: editmessage.trim(),
+					updatedAt: new Date()
+				}
 			}
-		}	
+		)
 
-		const updateData = {
-			title: title.trim(),
-			subtitle: subtitle.trim(),
-			slug: setnewslug,
-			body: body.trim(),
-			imageURL,
-			updatedAt: new Date()
-		};
-
-		const result = await req.db.collection("posts").updateOne(
-			{_id:new ObjectId(id)},
-			{$set: updateData}
-		);
-
-		if(result.matchedCount === 0){
-			return res.status(404).render("404",{title: "404"});
+	
+		const post = await req.db.collection("posts").findOne({_id: comment.postId});
+		if(!post){
+			return res.redirect('/');
 		}
 
 		// Socket.IO 
-		req.io.emit('posts:updated',{
-			id,
-			title: updateData.title,
-			slug: setnewslug,
-			imageURL: updateData.imageURL,
-			updatedAt: updateData.updatedAt
+		req.io.to(`post:${post.slug}`).emit('comments:updated',{
+			comment: {
+				_id: comment._id.toString(),
+				message: comment.message,
+				updatedAt: comment.updatedAt
+			}
 		});
 
 		// redirect to home
 		// return res.redirect('/');
 
-		return res.redirect(`/posts/${setnewslug}`);
+		return res.redirect(`/posts/${post.slug}`);
 		
 	}catch(error){
-		console.error("Error uptading page",error);
+		console.error("Error uptading comment",error);
 		res.status(500).render("error",{
 			title: "Server Error",
-			error: `Failed to update post: ${error.message}`,
+			error: `Failed to update comment: ${error.message}`,
 		})
 	}
 })
