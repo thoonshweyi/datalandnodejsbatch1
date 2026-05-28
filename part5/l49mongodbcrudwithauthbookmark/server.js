@@ -920,6 +920,7 @@ app.post("/comments/:id/delete",isAuth,async(req,res)=>{
 // Comment End
 
 // Like / Dislike Start
+// Like Post
 app.post("/posts/:slug/like",isAuth,async(req,res)=>{
 
 	try{
@@ -992,7 +993,6 @@ app.post("/posts/:slug/like",isAuth,async(req,res)=>{
 		})
 	}
 });
-// Like Post
 
 
 // Dislike Post
@@ -1070,6 +1070,92 @@ app.post("/posts/:slug/dislike",isAuth,async(req,res)=>{
 });
 
 // Like / Dislike End
+
+// Start Bookmark
+	// save/saved
+	app.post("/posts/:slug/bookmark",isAuth,async(req,res)=>{
+
+		try{
+			const {slug} = req.params;
+
+			const userid = new ObjectId(req.session.user._id);
+
+			const post = await req.db.collection('posts').findOne({slug});
+
+			if(!post){
+				return res.status(404).json({
+					success: false,
+					error: `Post not found.`
+				});
+			}
+
+			const alreadyBookmarked = post.bookmarks?.some(id => id.toString() === userid.toString()); //return true / false
+			if(alreadyBookmarked){
+				// remove like 
+				await req.db.collection('posts').updateOne(
+					{slug},
+					{
+						$pull: {
+							bookmarks: userid
+						}
+					}
+				);
+			}else{
+				// add bookmark
+
+				await req.db.collection('posts').updateOne(
+					{slug},
+					{
+						$addToSet: {
+							bookmarks: userid
+						},
+					}
+				);
+			}
+
+			// IMPORTANT: fetch updatead post after updateOne()
+			const updatePost =  await req.db.collection('posts').findOne({slug});
+
+			const payload = {
+				slug,
+				bookmarksCount: updatePost.bookmarks?.length || 0,
+				bookmarked: updatePost.bookmarks?.some(id => id.toString() === userid.toString()) || false,
+			}
+
+		
+			// Real-time: send to people who are on this single post
+			req.io.to(`post:${slug}`).emit('bookmarked:reaction',payload);
+
+			return res.status(200).json({
+				success: true,
+				data: payload
+			});
+
+		}catch(error){
+			console.error("Bookmark error: ",error);
+			return res.status(500).json({
+				success: false,
+				error: `Failed to bookmark post: ${error.message}`
+			})
+		}
+	});
+
+	// fetch bookmarked
+	app.get("/savedposts",isAuth,async(req,res)=>{
+		try{
+			return res.render('savedposts',{
+
+			});
+		}catch(error){
+			console.error("Saved post error: ",error);
+			return res.status(500).json({
+				success: false,
+				error: `Failed to load saved posts: ${error.message}`
+			})
+		}
+	});
+
+// End Bookmark
 
 // Edit Start
 app.get("/posts/:id/edit",isAuth,async(req,res)=>{

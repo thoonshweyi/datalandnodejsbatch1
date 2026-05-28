@@ -32,7 +32,15 @@
                         %>
                         <button type="button" id="likebtn" class="btn btn-sm <%= isLiked ? 'btn-success' : 'btn-outline-success' %> " <%= currentuserid ? "" : "disabled" %>>Like <span id="likecount"><%= post.likes ? post.likes.length : 0 %></span></button>
                         <button type="button" id="dislikebtn" class="btn btn-sm <%= isDisliked ? 'btn-danger' : 'btn-outline-danger' %>"  <%= currentuserid ? "" : "disabled" %>>Disike <span id="dislikecount"><%= post.dislikes ? post.dislikes.length : 0 %></span></button>
-
+                       
+                        <%
+                            const isBookmarked = currentuserid && post.bookmarks ?  post.bookmarks?.some(id => id.toString() === currentuserid.toString()) : false;
+                        %>
+                        <button type="button" id="bookmarkbtn" class="btn btn-sm <%= isBookmarked ? 'btn-warning' : 'btn-outline-warning' %>"  <%= currentuserid ? "" : "disabled" %> 
+                            <span id="bookmarktext"><%= isBookmarked ? 'Saved' : 'Save'  %></span>
+                            <span id="bookmarkcount"><%= post.bookmarks ? post.bookmarks.length : 0 %></span>
+                        </button>
+                        
 
                         <div class="d-flex gap-2 mt-4">
                             <a href="/" class="btn btn-outline-secondary">Back</a>
