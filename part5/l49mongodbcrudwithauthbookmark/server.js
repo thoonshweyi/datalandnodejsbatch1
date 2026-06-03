@@ -12,6 +12,7 @@ import session from "express-session";
 import MongoStore from "connect-mongo";
 
 import fs from "fs"
+import { title } from 'process';
 
 // express app
 const app = express()
@@ -1143,8 +1144,18 @@ app.post("/posts/:slug/dislike",isAuth,async(req,res)=>{
 	// fetch bookmarked
 	app.get("/savedposts",isAuth,async(req,res)=>{
 		try{
-			return res.render('savedposts',{
+			const userId = new ObjectId(req.session.user._id);
 
+			const posts = await req.db.collection('posts').find({
+				bookmarks: userId
+			}).sort({createdAt: -1}).toArray();
+			console.log("User",userId);
+
+			console.log("Posts",posts);
+
+			return res.render('savedposts',{
+				title: "Saved Posts",
+				posts
 			});
 		}catch(error){
 			console.error("Saved post error: ",error);

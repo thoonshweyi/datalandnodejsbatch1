@@ -36,7 +36,7 @@
                         <%
                             const isBookmarked = currentuserid && post.bookmarks ?  post.bookmarks?.some(id => id.toString() === currentuserid.toString()) : false;
                         %>
-                        <button type="button" id="bookmarkbtn" class="btn btn-sm <%= isBookmarked ? 'btn-warning' : 'btn-outline-warning' %>"  <%= currentuserid ? "" : "disabled" %> 
+                        <button type="button" id="bookmarkbtn" class="btn btn-sm <%= isBookmarked ? 'btn-warning' : 'btn-outline-warning' %>"  <%= currentuserid ? "" : "disabled" %> >
                             <span id="bookmarktext"><%= isBookmarked ? 'Saved' : 'Save'  %></span>
                             <span id="bookmarkcount"><%= post.bookmarks ? post.bookmarks.length : 0 %></span>
                         </button>
@@ -142,6 +142,10 @@
         const dislikebtn = document.getElementById('dislikebtn');
         const likecount = document.getElementById('likecount');
         const dislikecount = document.getElementById('dislikecount');
+
+        const bookmarkbtn = document.getElementById('bookmarkbtn');
+        const bookmarktext = document.getElementById('bookmarktext');
+        const bookmarkcount = document.getElementById('bookmarkcount')
 
 
         ioClient.emit("join-post",pageslug);
@@ -329,6 +333,59 @@
         })
 
         // End like/dislike
+
+        // Start Bookmark
+        if(bookmarkbtn){
+            bookmarkbtn.addEventListener("click",async ()=>{
+                try{
+                    const res = await fetch(`/posts/${pageslug}/bookmark`,{
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json"
+                        }
+                    });
+
+                    const result = await res.json();
+
+                    if(!result.success){
+                        alert(result.message || 'Bookmark failed');
+                        return;
+                    }
+
+                    // dislikebtn
+                    // likecount dec / discount inc
+                    // btn-outline-success / btn danger
+                    updatebookmark(result.data);
+
+                }catch(error){
+                    console.error("Bookmark error: ", error);
+                }
+            });
+        }
+
+        function updatebookmark(data){
+            if(bookmarkcount) bookmarkcount.textContent = data.bookmarksCount;
+
+            if(bookmarktext) bookmarktext.textContent = data.bookmarked ? "Saved" : "Save";
+
+            if(bookmarkbtn){
+                bookmarkbtn.classList.remove('btn-warning','btn-outline-warning');
+
+                if(data.bookmarked){
+                    bookmarkbtn.classList.add('btn-warning');
+                }else{
+                    bookmarkbtn.classList.add('btn-outline-warning');
+                }
+            }
+        }
+
+        ioClient.on('bookmarked:reaction',(payload)=>{
+            if(pageslug !== payload.slug) return;
+            
+            updatebookmark(payload);
+        })
+
+        // End Bookmark
 
     </script>
 </body>
