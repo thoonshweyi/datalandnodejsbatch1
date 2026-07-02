@@ -13,6 +13,7 @@ import MongoStore from "connect-mongo";
 
 import fs from "fs"
 import { title } from 'process';
+import { isReadable } from 'stream';
 
 // express app
 const app = express()
@@ -62,6 +63,10 @@ const io = new Server(expressServer,{
 // Sockeet events
 io.on("connection",(socket)=>{
 	console.log("Socket connected: ",socket.id);
+
+	socket.on("join-user",(userId)=>{
+		socket.join(`user:${userId}`);
+	})
 
 	socket.on('join-post',(slug)=>{
 		const roomname = `post:${slug}`;
@@ -654,6 +659,8 @@ app.post('/posts/create',isAuth, upload.single('image'), async (req,res)=>{
 			subtitle: subtitle.trim(),
 			body: body.trim(),
 			imageURL,
+			userId: new ObjectId(req.session.user._id),
+			authorName: req.session.user.username,
 			createdAt: new Date()
 		}
 
@@ -797,6 +804,19 @@ app.post("/posts/:slug/comments",isAuth,async(req,res)=>{
 			message: newcomment.message,
 			createdAt: newcomment.createdAt
 		}
+
+		// Notification (only create comment, not when editing, removig)
+		if(post.userId && post.userId.toString() !== user._id){
+			await createNotification(req,{
+				userId: post.userId,
+				fromUserId: user._id,
+				type: "comment",
+				message: `${user.username} comment on your post`,
+				postId: post._id,
+				postSlug: post.slug
+			})
+		}
+
 		
 		// Real-time: send to people who are on this single post
 		req.io.to(`post:${slug}`).emit('comments:created',{
@@ -1002,6 +1022,19 @@ app.post("/posts/:slug/like",isAuth,async(req,res)=>{
 	
 		// Real-time: send to people who are on this single post
 		req.io.to(`post:${slug}`).emit('likedislike:reaction',payload);
+
+		// Notification (only create comment, not when editing, removig)
+		if(!alreadyLiked && updatePost.userId && updatePost.userId.toString() !== req.session.user._id){
+			await createNotification(req,{
+				userId: updatePost.userId,
+				fromUserId: userid,
+				type: "like",
+				message: `${req.session.user.username} liked on your post`,
+				postId: updatePost._id,
+				postSlug: updatePost.slug
+			})
+		}
+
 
 		return res.status(200).json({
 			success: true,
@@ -1211,11 +1244,11 @@ app.post("/posts/:slug/dislike",isAuth,async(req,res)=>{
 			});
 		}
 	});
-	app.post('/notifiations/count',isAuth,async(req,res)=>{
+	app.get('/notifications/count',isAuth,async(req,res)=>{
 		try{
 			const userId = new ObjectId(req.session.user._id);
 
-			const notifications = await req.db.collection('notifications').countDocuments({
+			const count = await req.db.collection('notifications').countDocuments({
 				userId,
 				isRead: false
 			});
@@ -1234,7 +1267,28 @@ app.post("/posts/:slug/dislike",isAuth,async(req,res)=>{
 	});
 
 	app.post('/notifications/read-all',isAuth,async(req,res)=>{
+		try{
+			const userId = new ObjectId(req.session.user._id);
 
+			await req.db.collection('notifications').updateMany({
+				userId,
+				isRead: false
+			},{
+				$set:{
+					isRead: true,
+					readAt: new Date()
+				}
+			});
+
+			return res.redirect("/notifications");
+		}catch(error){
+			console.error("Notofication count error: ",error);
+			
+			return res.status(500).render('error',{
+				title: "Server Error",
+				error: `Failed to mark notification read: ${error.message}`
+			})
+		}
 	});
 // End Notifications
 

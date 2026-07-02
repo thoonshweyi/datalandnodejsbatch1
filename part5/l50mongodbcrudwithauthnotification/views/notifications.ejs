@@ -5,7 +5,14 @@
      <%- include('./layout/nav.ejs')  %>
 
     <div class="container mt-4">
-        <h6>Notifications</h6>
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h6>Notifications</h6>
+
+            <form action="/notifications/read-all" method="POST">
+                <button type="submit" class="btn btn-sm btn-primary">Mark all as read</button>
+            </form>
+        </div>
+
         <% if(notifications.length > 0){ %>
             <% notifications.forEach(notification=>{ %>
                     <div class="card mb-2">
@@ -13,10 +20,10 @@
 
                             <div class="d-flex justify-content-between align-items-center">
                                 <div>
-                                    <strong><%= notification.messages %></strong>
+                                    <strong><%= notification.message %></strong>
                                     <% if(notification.postSlug){ %>
-                                        ိ<div>
-                                            <a href="/notifications/<%= notification.postSlug %>" class="btn btn-sm btn-primary">View Post</a>
+                                        <div>
+                                            <a href="/posts/<%= notification.postSlug %>" class="btn btn-sm btn-primary">View Post</a>
                                         </div>
                                     <% } %>
                                 </div>
