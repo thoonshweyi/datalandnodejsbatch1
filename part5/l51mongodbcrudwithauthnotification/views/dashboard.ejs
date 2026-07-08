@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<%- include('./layout/head.ejs')  %>
+<body>
+  
+    <%- include('./layout/nav.ejs')  %>
+
+    <div class="container mt-5">
+        <div class="mb-3">
+            <div class="row">
+                <div class="col-md-8 mb-2 mb-md-0">
+                    <h5 class="fw-bold mb-2">
+                        <i class="fa-solid fa-chart-line me-2"></i>
+                        Live Admin Dashboard
+                    </h5>
+                </div>
+
+                <div class="col-md-4 text-md-end">
+                    <a href="/posts/create" class="btn btn-light btn-sm">
+                        <i class="fa-solid fa-plus me-1"></i>
+                        Create Post
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mb-3">
+            <div class="col-md-3 mb-3">
+                <div class="card">
+                    <div class="card-body d-flex justify-content-between align-items-center">
+                        <div>
+                            <p class="small text-muted mb-1">Total Posts</p>
+                            <h3 id="posts-count" class="fw-bold mb-0">10</h3>
+                        </div>
+                        <div>
+                            <i class="fa-solid fa-newspaper"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="card">
+                    <div class="card-body d-flex justify-content-between align-items-center">
+                        <div>
+                            <p class="small text-muted mb-1">Total Users</p>
+                            <h3 id="users-count" class="fw-bold mb-0">10</h3>
+                        </div>
+                        <div>
+                            <i class="fa-solid fa-users"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="card">
+                    <div class="card-body d-flex justify-content-between align-items-center">
+                        <div>
+                            <p class="small text-muted mb-1">Total Comments</p>
+                            <h3 id="comments-count" class="fw-bold mb-0">12</h3>
+                        </div>
+                        <div>
+                            <i class="fa-solid fa-comments"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="card">
+                    <div class="card-body d-flex justify-content-between align-items-center">
+                        <div>
+                            <p class="small text-muted mb-1">Total Notifiations</p>
+                            <h3 id="notifiations" class="fw-bold mb-0">13</h3>
+                        </div>
+                        <div>
+                            <i class="fa-solid fa-bell"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-8 mb-3">
+                <div class="card">
+                    <div class="card-header border-0 py-3">
+                        <h5 class="fw-bold mb-0">
+                            <i class="fa-solid fa-fire text-danger me-2"></i> Top Liked Posts
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-response">
+                            <table class="table align-middle">
+                                <thead>
+                                    <tr>
+                                        <th>Posts</th>
+                                        <th>Likes</th>
+                                        <th>Dislikes</th>
+                                        <th>Saved</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>
+                                            <div>title</div>
+                                            <small>date</small>
+                                        </td>
+                                        <td>like</td>
+                                        <td>dislike</td>
+                                        <td>bookmark</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div>
+
+
+            </div>
+        </div>
+    </div>
+    <%- include('./layout/footer.ejs')  %>
+    <script src="/bootstrap/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+
+        const dashboardSock = io();
+        
+        dashboardSock.emit("join-dashboard");
+        
+        dashboardSock.on("dashboard:update",(payload)=>{
+            updateDashboardCounts(payload);
+            updateLatestPosts();
+            updateLatestComments();
+            updateTopLikedPosts(payload);
+        });
+
+        function updateDashboardCounts(data){
+            console.log(data);
+            document.getElementById('posts-count').textContent = payload.postsCount;
+            document.getElementById('users-count').textContent = payload.usersCount;
+            document.getElementById('comments-count').textContent = payload.commentsCount;
+            document.getElementById('notifications-count').textContent = payload.notificationsCount;
+        }
+
+        function updateLatestPosts(data){
+
+        }
+
+        function updateLatestComments(data){
+            
+        }
+
+        function updateTopLikedPosts(dat){
+
+        }
+
+        // helper
+        function escapseHtml(text){
+            return String(text)
+            .replaceAll("&","&amp;")
+            .replaceAll("<","&lt;")
+            .replaceAll(">","&gt;")
+            .replaceAll('"',"&quot;")
+            .replaceAll("'","&#39;");
+        }
+        
+
+
+    </script>
+</body>
+</html>

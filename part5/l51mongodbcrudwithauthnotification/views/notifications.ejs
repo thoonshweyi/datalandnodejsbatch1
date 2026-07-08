@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<%- include('./layout/head.ejs')  %>
+<body>
+     <%- include('./layout/nav.ejs')  %>
+
+    <div class="container mt-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h6>Notifications</h6>
+
+            <form action="/notifications/read-all" method="POST">
+                <button type="submit" class="btn btn-sm btn-primary">Mark all as read</button>
+            </form>
+        </div>
+
+        <% if(notifications.length > 0){ %>
+            <% notifications.forEach(notification=>{ %>
+                    <div class="card mb-2">
+                        <div class="card-body ">
+
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <strong><%= notification.message %></strong>
+                                    <% if(notification.postSlug){ %>
+                                        <div>
+                                            <a href="/posts/<%= notification.postSlug %>" class="btn btn-sm btn-primary">View Post</a>
+                                        </div>
+                                    <% } %>
+                                </div>
+
+                                <small class="text-muted">
+                                <%= notification.createdAt ? new Date(notification.createdAt).toLocaleString() : "" %>
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+            <% }) %>
+
+        <% }else{ %>
+            <div class="alert alert-info">
+                No notifications yet.
+            </div>
+        <% } %>
+
+    
+    </div>
+    
+    <%- include('./layout/footer.ejs')  %>
+    <script src="/bootstrap/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
