@@ -146,7 +146,7 @@ async function createNotification(req,data){
 	req.io.to(`user:${data.userId.toString()}`).emit('notification:new',savedNotification);
 
 	// Dasboard Update
-	emitDashboardUpdate(req);
+	await emitDashboardUpdate(req);
 
 	return savedNotification;
 }
@@ -158,8 +158,19 @@ async function getdashboarddatas(db){
 	const notificationsCount = await db.collection("notifications").countDocuments();
 
 	const latestPosts = await db.collection("posts").find().sort({createdAt: -1}).limit(5).toArray();
-	const latestComments = await db.collection("posts").find().sort({createdAt: -1}).limit(5).toArray();
-	// const topLikedPosts = await db.collection("posts");
+	const latestComments = await db.collection("comments").find().sort({createdAt: -1}).limit(5).toArray();
+	const topLikedPosts = await db.collection("posts").aggregate([
+		{
+			$addFields:{
+				likesCount:{$size: {$ifNull: ["$likes",[]]}},
+				dislikesCount:{$size: {$ifNull: ["$dislikes",[]]}},
+				bookmarksCount:{$size: {$ifNull: ["$bookmarks",[]]}},
+			}
+		},
+		{$sort: {likesCount:-1}},
+		{$limit: 5}
+	]).toArray();
+	console.log("topLikedPosts: ",topLikedPosts);
 
 
 	return {
@@ -169,7 +180,7 @@ async function getdashboarddatas(db){
 		notificationsCount,
 		latestPosts,
 		latestComments,
-		// topLikedPosts
+		topLikedPosts
 	}
 }
 
@@ -366,7 +377,7 @@ app.post('/register',async (req,res)=>{
 		}
 
 		// Dasboard Update
-		emitDashboardUpdate(req);
+		await emitDashboardUpdate(req);
 
 		return res.redirect("/");
 
@@ -715,7 +726,7 @@ app.post('/posts/create',isAuth, upload.single('image'), async (req,res)=>{
 		});
 
 		// Dashboard Update
-		emitDashboardUpdate(req);
+		await emitDashboardUpdate(req);
 
 		// show success message 
 		// return res.render("success", { 
@@ -867,7 +878,7 @@ app.post("/posts/:slug/comments",isAuth,async(req,res)=>{
 		})
 
 		// Dasboard Update
-		emitDashboardUpdate(req);
+		await emitDashboardUpdate(req);
 
 		return res.redirect(`/posts/${slug}`);
 
@@ -936,7 +947,7 @@ app.post("/comments/:id/edit",isAuth,async(req,res)=>{
 
 		
 		// Dasboard Update
-		emitDashboardUpdate(req);
+		await emitDashboardUpdate(req);
 
 		// redirect to home
 		// return res.redirect('/');
@@ -998,7 +1009,7 @@ app.post("/comments/:id/delete",isAuth,async(req,res)=>{
 		});
 
 		// Dasboard Update
-		emitDashboardUpdate(req);
+		await emitDashboardUpdate(req);
 
 		// redirect back to the same post
 		return res.redirect(`/posts/${post.slug}`);
@@ -1088,7 +1099,7 @@ app.post("/posts/:slug/like",isAuth,async(req,res)=>{
 		}
 
 		// Dasboard Update
-		emitDashboardUpdate(req);
+		await emitDashboardUpdate(req);
 
 		return res.status(200).json({
 			success: true,
@@ -1166,7 +1177,7 @@ app.post("/posts/:slug/dislike",isAuth,async(req,res)=>{
 		req.io.to(`post:${slug}`).emit('likedislike:reaction',payload);
 
 		// Dasboard Update
-		emitDashboardUpdate(req);
+		await emitDashboardUpdate(req);
 
 		return res.status(200).json({
 			success: true,
@@ -1240,7 +1251,7 @@ app.post("/posts/:slug/dislike",isAuth,async(req,res)=>{
 			req.io.to(`post:${slug}`).emit('bookmarked:reaction',payload);
 
 			// Dasboard Update
-			emitDashboardUpdate(req);
+			await emitDashboardUpdate(req);
 
 			return res.status(200).json({
 				success: true,
@@ -1501,7 +1512,7 @@ app.post("/posts/:id/edit",isAuth, upload.single('image'),async(req,res)=>{
 		});
 
 		// Dasboard Update
-		emitDashboardUpdate(req);
+		await emitDashboardUpdate(req);
 
 		// redirect to home
 		// return res.redirect('/');
@@ -1557,7 +1568,7 @@ app.post("/posts/:id/delete",isAuth,async(req,res)=>{
 		req.io.emit('posts:deleted',{id});
 
 		// Dasboard Update
-		emitDashboardUpdate(req);
+		await emitDashboardUpdate(req);
 
 		// redirect to home
 		return res.redirect('/');
