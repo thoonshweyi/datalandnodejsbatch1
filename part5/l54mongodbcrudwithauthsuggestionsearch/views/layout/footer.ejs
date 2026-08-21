@@ -1,0 +1,60 @@
+<footer class="text-center mt-3">
+    copyright &copy; Nodejs Project 2025.
+</footer>
+
+<!-- sweetalert2 -->
+<script src="/sweetalert2/sweetalert2.all.min.js"></script>
+
+<!-- Toastify -->
+<script src="/toastify/toastify.js"></script>
+
+<!-- Notification -->
+<% if(currentuser){ %>
+<script>
+    const currentuserIdForNoti = "<%= currentuser?._id %>";
+
+    if(typeof io !== "undefined"){
+        const notificationSocket = io();
+
+        notificationSocket.emit("join-user", currentuserIdForNoti);
+
+        const notificationcountSpan = document.getElementById("notification-count");
+
+        async function loadnoticount(params){
+            try{
+                const res = await fetch("/notifications/count");
+                const result = await res.json();
+                if(result.success && notificationcountSpan){
+                    if(result.count > 0){
+                        notificationcountSpan.style.display = "inline-block";
+                        notificationcountSpan.textContent = result.count;
+                    }else{
+                        notificationcountSpan.style.display = "none";
+                    }
+                }
+            }catch(error){
+                console.error("Notification count error: ",error);
+            }
+        }
+
+        loadnoticount();
+
+
+        notificationSocket.on('notification:new',function(payload){
+            loadnoticount();
+
+            if(typeof Toastify !== "undefined"){
+                Toastify({
+                    text: payload.message,
+                    duration: 3000,
+                    gravity: "top", // `top` or `bottom`
+                    position: "right", // `left`, `center` or `right`
+                }).showToast();
+            }else{
+               console.log() 
+            }
+        });
+
+    }
+</script>
+<% } %>
