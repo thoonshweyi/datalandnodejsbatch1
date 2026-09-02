@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<%- include('./layout/head.ejs')  %>
+<body>
+     <%- include('./layout/nav.ejs')  %>
+
+    <div class="container mt-4">
+        <h1><%= aboutpage.title %></h1>
+        <p><%= aboutpage.body %></p>
+
+        <% if(aboutpage.imageurls && aboutpage.imageurls.length > 0){ %>
+            <div class="row g-3 mb-3">
+
+                <% aboutpage.imageurls.forEach(imageurl =>{ %>
+                    <div class="col-md-2">
+                        <img src="<%= imageurl %>" class="img-fluid rounded shadow-sm" alt="about image">
+                    </div>
+                <% }) %>
+             
+            </div>
+        <% } %>
+
+        <%  if(currentuser){ %>
+            <a href="/about/edit" class="btn btn-primary btn-sm rounded-0">Edit About</a>
+        <%  } %>
+     
+    </div>
+
+    <div id="imageModal" class="modal fade">
+        <div class="modal-dialog modal-fullscreen">
+            <div class="modal-content bg-dark">
+                <div class="modal-header">
+                    <span class="text-white">
+                        <span id="currentImageNumber">1</span>
+                        /
+                        <span class="totalimages">5</span>
+                    </span>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body d-flex justify-content-center align-items-center">
+                    <button type="button" id="prevImageBtn" class="btn btn-dark position-absolute start-0 ms-3">
+                        <i class="fa-solid fa-chevron-left fa-2x"></i>
+                    </button>
+
+                    <img src="" id="previewimage" class="img-fluid" style="max-height: 85vh; object-fit: contain;" alt="Image Preview">
+
+                    <button type="button" id="nextImageBtn" class="btn btn-dark position-absolute end-0 me-3">
+                        <i class="fa-solid fa-chevron-right fa-2x"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <%- include('./layout/footer.ejs')  %>
+    <script src="/bootstrap/js/bootstrap.bundle.min.js"></script>
+
+    <script type="text/javascript">
+        const imgmodal = document.getElementById('imageModal');
+        const previewimg = document.getElementById('previewImage');
+        const previmgbtn = document.getElementById('prevImageBtn');
+        const nextimgbtn = document.getElementById('nextImageBtn');
+
+        let currentimgindex = 0;
+        let totalimages = 5;
+
+        const currentimgnumber = document.getElementById('currentImageNumber');
+
+        function showImage(){
+
+        }
+
+        previmgbtn.addEventListener('click',()=>{
+            currentimgindex--;
+
+            if(currentimgindex < 0){
+                currentimgindex = totalimages.length - 1;
+            }
+
+            showImage();
+        });
+
+        nextimgbtn.addEventListener('click',()=>{
+            currentimgindex++;
+
+            if(currentimgindex >= totalimages.length){
+                currentimgindex = 0;
+            }
+
+            showImage();
+
+        });
+    </script>
+</body>
+</html>
