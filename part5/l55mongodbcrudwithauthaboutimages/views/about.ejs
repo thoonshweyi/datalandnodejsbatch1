@@ -5,20 +5,99 @@
      <%- include('./layout/nav.ejs')  %>
 
     <div class="container mt-4">
-        <h1><%= aboutpage.title %></h1>
-        <p><%= aboutpage.body %></p>
+        <div class="row justify-content-center">
+            <div class="col-md-10">
+                <!-- about content -->
+                 <div class="mb-3">
+                    <h1><%= aboutpage.title %></h1>
+                    <p><%= aboutpage.body %></p>
+                 </div>
+            </div>
 
-        <% if(aboutpage.imageurls && aboutpage.imageurls.length > 0){ %>
-            <div class="row g-3 mb-3">
+            <% 
+                const images = Array.isArray(aboutpage.imageurls) ? aboutpage.imageurls : []; // 0, 1, 2, 3, 4, 5
+                const visibleImages = images.slice(0,5); // length 5
+            %>
 
-                <% aboutpage.imageurls.forEach(imageurl =>{ %>
-                    <div class="col-md-2">
-                        <img src="<%= imageurl %>" class="img-fluid rounded shadow-sm" alt="about image">
+            <!-- Image Gallery -->
+            <% if(images.length === 1){ %>
+                <!-- 1 image -->
+                <div class="mb-3">
+                    <img src="<%= images[0] %>" class="img-fluid rounded" style="max-height: 400px; object-fit: cover; cursor: pointer;" alt="about image" data-bs-toggle="modal" data-bs-target="#imageModal" data-index="0">
+                </div>
+
+            <% }else if(images.length === 2){ %>
+                <!-- 2 image -->
+                <div class="row g-1 mb-3">
+                    <%  images.forEach((imageurl,index) =>{ %>
+                        <div class="col-6">
+                            <img src="<%= imageurl %>" class="rounded" style="max-height: 200px; object-fit: cover; cursor: pointer;" alt="about image <%= index + 1 %>" data-bs-toggle="modal" data-bs-target="#imageModal" data-index="<%= index %>">
+                        </div>
+                    <% }) %>
+                </div>
+
+            <% }else if(images.length === 3){ %>
+                <!-- 3 image -->
+                <div class="row g-1 mb-3">
+
+                    <!-- 1 Large Left Image -->
+                    <div class="col-md-7 mb-3">
+                        <img src="<%= images[0] %>" class="rounded" style="height: 200px; object-fit: cover; cursor: pointer;" alt="about image 1" data-bs-toggle="modal" data-bs-target="#imageModal" data-index="0">
+                    </div>
+
+                    <!-- 2 Small Right Image -->
+                    <div class="col-md-5 mb-3">
+                        <div class="row g-1">
+                            <div class="col-12">
+                                <img src="<%= images[1] %>" class="rounded" style="height: 200px; object-fit: cover; cursor: pointer;" alt="about image 2" data-bs-toggle="modal" data-bs-target="#imageModal" data-index="1">
+                            </div>
+
+                            <div class="col-12">
+                                <img src="<%= images[2] %>" class="rounded" style="height: 200px; object-fit: cover; cursor: pointer;" alt="about image 3" data-bs-toggle="modal" data-bs-target="#imageModal" data-index="2">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            <% }else if(images.length === 4){ %>
+                <!-- 4 image -->
+                <div class="row g-1">
+                <%  images.forEach((imageurl,index) =>{ %>
+                    <div class="col-6">
+                        <img src="<%= imageurl %>" class="rounded" style="height: 200px; object-fit: cover; cursor: pointer;" alt="about image <%= index + 1 %>" data-bs-toggle="modal" data-bs-target="#imageModal" data-index="<%= index %>">
                     </div>
                 <% }) %>
-             
-            </div>
-        <% } %>
+                </div>
+
+            <% }else if(images.length === 5){ %>
+                <!-- 5 image -->
+
+                <div class="row g-1 mb-3">
+                    <!-- [0,1,2,3,4] -->
+                    <!-- Top 2 image -->
+                    <%  visibleImages.slice(0,2).forEach((imageurl,index) =>{ %>
+                        <div class="col-6">
+                            <img src="<%= imageurl %>" class="rounded" style="height: 230px; object-fit: cover; cursor: pointer;" alt="about image <%= index + 1 %>" data-bs-toggle="modal" data-bs-target="#imageModal" data-index="<%= index  %>">
+                        </div>
+                    <% }) %>
+
+                    <!-- [0,1,2,3,4] -->
+                    <!-- Bottom 3 imag e [2,3,4] -->
+                    <!-- 0 1 2 convert to 2 3 4 -->
+                    <%  visibleImages.slice(2,5).forEach((imageurl,index) =>{ 
+                        const actualIndex = index + 2  %>
+                        <div class="col-4">
+                            <img src="<%= imageurl %>" class="rounded" style="height: 200px; object-fit: cover; cursor: pointer;" alt="about image <%= actualIndex + 1 %>" data-bs-toggle="modal" data-bs-target="#imageModal" data-index="<%= actualIndex %>">
+                        </div>
+                    <% }) %>
+                </div>
+            <% }else{ %>
+                <div class="alert alert-light border mb-3">
+                    No Image available.
+                </div>
+            <% } %>
+        </div>
+
 
         <%  if(currentuser){ %>
             <a href="/about/edit" class="btn btn-primary btn-sm rounded-0">Edit About</a>
@@ -26,14 +105,14 @@
      
     </div>
 
-    <div id="imageModal" class="modal fade">
+    <div id="imageModal" class="modal fade" tabindex="-1">
         <div class="modal-dialog modal-fullscreen">
             <div class="modal-content bg-dark">
                 <div class="modal-header">
                     <span class="text-white">
                         <span id="currentImageNumber">1</span>
                         /
-                        <span class="totalimages">5</span>
+                        <span class="totalimages"><%= images.length %></span>
                     </span>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
@@ -42,7 +121,7 @@
                         <i class="fa-solid fa-chevron-left fa-2x"></i>
                     </button>
 
-                    <img src="" id="previewimage" class="img-fluid" style="max-height: 85vh; object-fit: contain;" alt="Image Preview">
+                    <img src="" id="previewImage" class="img-fluid" style="max-height: 85vh; object-fit: contain;" alt="Image Preview">
 
                     <button type="button" id="nextImageBtn" class="btn btn-dark position-absolute end-0 me-3">
                         <i class="fa-solid fa-chevron-right fa-2x"></i>
@@ -56,25 +135,52 @@
     <script src="/bootstrap/js/bootstrap.bundle.min.js"></script>
 
     <script type="text/javascript">
+        const getImages = <%- JSON.stringify(images) %>;
+        // console.log(getImages.length);
+        // const getImages = "<%= images %>";
+
+
         const imgmodal = document.getElementById('imageModal');
         const previewimg = document.getElementById('previewImage');
         const previmgbtn = document.getElementById('prevImageBtn');
         const nextimgbtn = document.getElementById('nextImageBtn');
-
-        let currentimgindex = 0;
-        let totalimages = 5;
-
         const currentimgnumber = document.getElementById('currentImageNumber');
 
-        function showImage(){
+        let currentimgindex = 0;
 
+        // Open Image
+        imgmodal.addEventListener('show.bs.modal',(event)=>{
+            const clickImage = event.relatedTarget;
+            // console.log(clickImage);
+
+            if(!clickImage) return;
+
+            currentimgindex = Number(clickImage.dataset.index || 0);
+
+            showImage();
+        });
+
+        function showImage(){
+            if(getImages.length === 0) return;
+
+            previewimg.src = getImages[currentimgindex];
+            currentimgnumber.textContent = currentimgindex + 1;
+
+            // Optional: hide arrows when only one image
+            if(getImages.length <= 1){
+                previmgbtn.classList.add('d-none');
+                nextimgbtn.classList.add('d-none');
+            }else{
+                previmgbtn.classList.remove('d-none');
+                nextimgbtn.classList.remove('d-none');
+            }
         }
 
         previmgbtn.addEventListener('click',()=>{
             currentimgindex--;
 
             if(currentimgindex < 0){
-                currentimgindex = totalimages.length - 1;
+                currentimgindex = getImages.length - 1;
             }
 
             showImage();
@@ -83,12 +189,28 @@
         nextimgbtn.addEventListener('click',()=>{
             currentimgindex++;
 
-            if(currentimgindex >= totalimages.length){
+            if(currentimgindex >= getImages.length){
                 currentimgindex = 0;
             }
 
             showImage();
 
+        });
+
+        // Keyboard Arrow Support
+        document.addEventListener('keydown',(event)=>{
+            if(!imgmodal.classList.contains('show')) return;
+
+            if(event.key == 'ArrowLeft'){
+                previmgbtn.click();
+            }else{
+                nextimgbtn.click();
+            }
+        })
+
+        // Clear Image when modal close
+        imgmodal.addEventListener('hidden.bs.modal',(event)=>{
+            previewimg.src = "";
         });
     </script>
 </body>
