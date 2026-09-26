@@ -28,6 +28,7 @@ const __dirname = path.dirname(__filename);
 app.set("view engine", "ejs")
 app.set("views", path.join(__dirname, "views"));
 
+const MAX_ABOUT_IMAGES = 5;
 
 // middleware and static files
 app.use(morgan("dev"));
@@ -613,7 +614,8 @@ app.get('/about/edit',isAuth, async (req, res) => {
 		return res.render('aboutedit',{	
 			title: 'Edit About Page',
 			error: null,
-			aboutpage
+			aboutpage,
+			maxImages: MAX_ABOUT_IMAGES
 		});
 	}catch(error){
 		console.error("Error loading About Edit Page",error)
@@ -624,7 +626,7 @@ app.get('/about/edit',isAuth, async (req, res) => {
 	}
 })
 
-app.post('/about/edit',isAuth, upload.array('images',5), async (req, res) => {
+app.post('/about/edit',isAuth, upload.array('images',MAX_ABOUT_IMAGES), async (req, res) => {
 	try{
 		const {title,body} = req.body;
 

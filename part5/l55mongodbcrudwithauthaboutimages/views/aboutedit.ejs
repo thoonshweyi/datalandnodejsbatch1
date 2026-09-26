@@ -7,13 +7,18 @@
     <div class="container">
         <div>
             <h1><%= title %></h1>
+
+            <!-- Server Error -->
             <% if(error){ %>
                 <div class="alert alert-danger"><%= error %></div>
             <% } %>
+
+            <!-- Client Error -->
+            <div id="clientError" class="alert alert-danger d-none">Error</div>
         </div>
 
         <div>
-                <form action="/about/edit" method="POST" enctype="multipart/form-data">
+                <form id="aboutEditForm" action="/about/edit" method="POST" enctype="multipart/form-data">
                     <div class="mb-3">
                         <label for="" class="form-label">Page Title</label>
                         <!-- <input type="text" name="title" id="title" value="<%= aboutpage ? aboutpage.title : '' %>"> -->
@@ -25,25 +30,121 @@
                         <textarea name="body" id="body"  class="form-control"><%= aboutpage ? aboutpage.body : '' %></textarea>
                     </div>
 
-
+                    <!-- Current Images -->
                     <div class="mb-3">
-                        <label for="" class="form-label">Upload Multiple Images</label>
-                        <input type="file" name="images" id="images" class="form-control" accept="image/*" multiple>
-                        <div class="form-text">You can upload up to 5 images at once.</div>
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="mb-0">
+                                <i class="fa-solid fa-images me-1"></i> Current Photos
+                            </h6>
+
+                            <span class="badge text-bg-secondary">
+                                <span id="totalImageCount">
+                                    <%= aboutpage.imageurls?.length || 0 %>
+                                </span> / <%= maxImages || 5 %>
+                            </span>
+                        </div>
+
+                         <% if(aboutpage.imageurls && aboutpage.imageurls.length > 0){ %>
+                            <div id="existingImagesGrid" class="row g-3 mb-3">
+                                <% aboutpage.imageurls.forEach(imageurl =>{ %>
+                                    <div class="col-6 col-md-4 col-lg-3 existing-images-card" data-image-url="<%= imageurl %>">
+                                        <div class="card h-100 shadow-sm">
+                                            <img src="<%= imageurl %>" class="card-img-top" style="height: 150px; object-fit: cover;" alt="current image">
+                                                
+                                            <div class="card-body p-2">
+                                                <button type="button" class="w-100 btn btn-outline-danger btn-sm remove-existing-btn">
+                                                    <i class="fa-solid fa-trash me-1"></i>Remove
+                                                </button>
+                                            </div>
+                                        </div>
+                                    
+                                    </div>
+                                <% }) %>
+                            </div>
+                        <% }else { %>
+                            <div class="alert alert-light border">
+                                <i class="fa-regular fa-image me-2"></i> No current images.
+                            </div>
+                        <% } %>
+
+                        <!-- Javascript will add remove Images inputs -->
+                        <div id="removeImageInputs"></div>
                     </div>
 
-                    
-                    <% if(aboutpage.imageurls && aboutpage.imageurls.length > 0){ %>
-                        <div class="row g-3 mb-3">
+                    <hr/>
 
-                            <% aboutpage.imageurls.forEach(imageurl =>{ %>
-                                <div class="col-md-2">
-                                    <img src="<%= imageurl %>" class="img-fluid rounded shadow-sm" alt="current image">
+                    <!-- Upload Box -->
+                    <div class="mb-4">
+                        <label for="" class="form-label fw-semibold">Add New Photos</label>
+
+                        <!-- upload card -->
+                        <label for="images" class="card bg-light text-center border-2 shadow-sm" role="button">
+                            <div class="card-body py-5">
+                                <div class="mb-3">
+                                    <span class="bg-primary bg-opacity-10 rounded-circle d-inline-flex justify-content-center align-items-center p-4">
+                                        <i class="fa-solid fa-cloud-arrow-up fa-2x text-primary"></i>
+                                    </span>
                                 </div>
-                            <% }) %>
-                        
+
+                                <h5 class="mb-2">Upload Photos</h5>
+                                <div class="text-muted mb-3">You can upload up to 5 images at once.</div>
+                                <span class="btn btn-primary">
+                                    <i class="fa-solid fa-images me-2"></i> Choose Photos
+                                </span>
+
+                                <div class="mt-3">
+                                    <small class="text-muted d-block">JPG, PNG, WEP or other image files</small>
+                                    <small class="text-muted d-block">Maximum 2 MB per image</small>
+                                    <small class="text-muted d-block">Maximum <%= maxImages || 5 %> photos total</small>
+                                </div>
+
+                            </div>
+                            
+                        </label>
+
+                        <!-- File Input -->
+                        <input type="file" name="images" id="images" class="d-none form-control" accept="image/*" multiple>
+                    
+                        <!-- Selected Information -->
+                        <div id="selectedFileInfo" class="d-none alert alert-primary mt-3 mb-0">
+                            <div class="d-flex align-items-center">
+                                <i class="fa-solid fa-circle-check me-2"></i>
+                                <strong id="selectedFileCount">0</strong> photo(s) selected
+                            </div>
                         </div>
-                    <% } %>
+
+
+                    </div>
+
+                    <!-- New Images Preview -->
+                     <div id="newImageSection" class="d-none mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="mb-0">
+                                <i class="fa-solid fa-images me-1"></i> New Photos
+                            </h6>
+
+                            <span class="badge text-bg-primary">
+                                <span id="newImageCount">0</span> selected
+                            </span>
+                        </div>
+
+                        <div id="newImagesGrid" class="row g-3"></div>
+                     </div>
+
+                     <!-- Upload Progress -->
+                      <div id="uploadStatus" class="card shadow-sm mb-3">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span id="uploadStatusText">Preparing upload....</span>
+                                <strong id="uploadPercent">0%</strong>
+                            </div>
+
+                            <div class="progress">
+                                <div id="uploadProgressBar" class="progress-bar progress-bar-striped progress-bar-animated" style="width: 20%;"></div>
+                            </div>
+                        </div>
+                      </div>
+
                  
                     <div class="d-flex justify-content-end gap-2">
                         <a href="/about" class="btn btn-secondary">Cancel</a>
