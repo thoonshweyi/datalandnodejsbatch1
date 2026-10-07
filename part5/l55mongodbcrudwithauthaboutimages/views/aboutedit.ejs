@@ -132,7 +132,7 @@
                      </div>
 
                      <!-- Upload Progress -->
-                      <div id="uploadStatus" class="card shadow-sm mb-3">
+                      <div id="uploadStatus" class="card d-none shadow-sm mb-3">
                         <div class="card-body">
                             <div class="d-flex justify-content-between align-items-center mb-2">
                                 <span id="uploadStatusText">Preparing upload....</span>
@@ -148,7 +148,7 @@
                  
                     <div class="d-flex justify-content-end gap-2">
                         <a href="/about" class="btn btn-secondary">Cancel</a>
-                        <button type="submit" class="btn btn-primary">Update</button>
+                        <button type="submit" id="submitBtn" class="btn btn-primary">Update</button>
                     </div>
                 </form>
         </div>
@@ -158,5 +158,170 @@
     
     <%- include('./layout/footer.ejs')  %>
     <script src="/bootstrap/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        const MAX_IMAGES = <%= maxImages || 5 %>; // number data type
+        const MAX_FILE_SIZE = 2 * 1024 * 1024;  // 2MB
+        
+        const aboutEditForm = document.getElementById('aboutEditForm');
+        const imagesInput = document.getElementById('images');
+
+        const existingImagesGrid = document.getElementById('existingImagesGrid');
+
+        const newImageSection = document.getElementById('newImageSection');
+        const newImagesGrid = document.getElementById('newImagesGrid');
+        const removeImageInputs = document.getElementById('removeImageInputs');
+        const newImageCount = document.getElementById('newImageCount');
+        const totalImageCount = document.getElementById('totalImageCount');
+
+        const selectedFileInfo = document.getElementById('selectedFileInfo');
+        const selectedFileCount = document.getElementById('selectedFileCount');
+        
+        const clientError = document.getElementById('clientError');
+
+        const uploadStatus = document.getElementById('uploadStatus');
+        const uploadPercent = document.getElementById('uploadPercent');
+        const uploadStatusText = document.getElementById('uploadStatusText');
+        const uploadProgressBar = document.getElementById('uploadProgressBar');
+
+        const submitBtn = document.getElementById('submitBtn');
+
+        // state
+        let selectedFiles = [];
+
+        imagesInput.addEventListener('change',()=>{
+            // console.log(imagesInput.files); // FileList {0: File, length: 1}
+            // console.log(Array.from(imagesInput.files)); // [File]
+
+            addFiles(Array.from(imagesInput.files));
+        });
+
+        function addFiles(files){
+            // console.log(files); // (4) [File, File, File, File]
+
+            hideError();
+
+            for(const file of files){
+                console.log(file);
+
+                // must be image
+                if(!file.type.startsWith('image/')){
+                    showError(`${file.name} is not an image.`);
+                    continue;
+                }
+
+                // file size (2mb)
+                if(file.size > MAX_FILE_SIZE){
+                    showError(`${file.name} is larger than 2 M`);
+                    continue;
+                }
+
+                // prevent duplicate 
+                const duplicate = selectedFiles.some(
+                    (selectedFile)=> selectedFile.name === file.name &&
+                                    selectedFile.size === file.size &&
+                                    selectedFile.lastModified === file.lastModified
+                );
+                
+                if(duplicate){
+                    continue;
+                }
+
+                // Maximum total images
+                if(getFinalImageCount() >= MAX_IMAGES){
+                    showError(`Maximum ${maxImages} images are allowed.`);
+                    break;
+                }
+                
+                selectedFiles.push(file);
+            }
+
+            renderNewImages();
+        }
+
+        function showError(message){
+            clientError.textContent = message;
+            clientError.classList.remove('d-none');
+
+            window.scrollTo({
+                top: 0,
+                behavior: "smooth"
+            });
+        }
+
+        function hideError(){
+            clientError.textContent = "message";
+            clientError.classList.add('d-none');
+        }
+
+        function getFinalImageCount(){
+
+        }
+
+        function renderNewImages(){
+            newImagesGrid.innerHTML = "";
+
+            if(selectedFiles.length === 0){
+                newImageSection.classList.add('d-none');
+                return;
+            }
+
+            newImageSection.classList.remove('d-none');
+            
+            selectedFiles.forEach((selectedFile,index)=>{
+                const imageURL = URL.createObjectURL(selectedFile);
+
+                const columndiv = document.createElement('div');
+
+                columndiv.className = "col-6 col-lg-3 col-md-4";
+
+                columndiv.innerHTML = `
+                    <div class="card h-100 shadow-sm">
+                        <img src="${imageURL}" class="card-img-top" style="height:150px;object-fit:cover" alt="New image preview" />
+                        
+                        <div class="card-body p-2">
+                            <div class="small text-trancate mb-2" title="${escapseHtml(selectedFile.name)}">
+                                ${escapseHtml(selectedFile.name)}
+                            </div>
+
+                            <div class="small text-muted mb-2">
+                                ${selectedFile.size}
+                            </div>
+
+                            <button type="button" class="w-100 btn btn-outline-danger btn-sm">
+                                <i class="fa-solid fa-trash me-1"></i>Remove
+                            </button>
+                        </div>
+                    </div>
+                `;
+
+                newImagesGrid.appendChild(columndiv);
+
+            });
+
+        }
+
+        function formatFileSize(bytes){
+            if(bytes < 1024){
+                return `${bytes} B`;
+            }
+
+            if(bytes < 1024 * 1024){
+                return `${(bytes / 1024).toFixed(1)} KB`;
+            }
+
+            return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+        }
+
+        // helper
+        function escapseHtml(text){
+            return String(text)
+            .replaceAll("&","&amp;")
+            .replaceAll("<","&lt;")
+            .replaceAll(">","&gt;")
+            .replaceAll('"',"&quot;")
+            .replaceAll("'","&#39;");
+        }
+    </script>
 </body>
 </html>
