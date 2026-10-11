@@ -47,7 +47,7 @@
                          <% if(aboutpage.imageurls && aboutpage.imageurls.length > 0){ %>
                             <div id="existingImagesGrid" class="row g-3 mb-3">
                                 <% aboutpage.imageurls.forEach(imageurl =>{ %>
-                                    <div class="col-6 col-md-4 col-lg-3 existing-images-card" data-image-url="<%= imageurl %>">
+                                    <div class="col-6 col-md-4 col-lg-3 existing-image-card" data-image-url="<%= imageurl %>">
                                         <div class="card h-100 shadow-sm">
                                             <img src="<%= imageurl %>" class="card-img-top" style="height: 150px; object-fit: cover;" alt="current image">
                                                 
@@ -188,6 +188,7 @@
 
         // state
         let selectedFiles = [];
+        const removeExistingImages = new Set();
 
         imagesInput.addEventListener('change',()=>{
             // console.log(imagesInput.files); // FileList {0: File, length: 1}
@@ -229,7 +230,7 @@
 
                 // Maximum total images
                 if(getFinalImageCount() >= MAX_IMAGES){
-                    showError(`Maximum ${maxImages} images are allowed.`);
+                    showError(`Maximum ${MAX_IMAGES} images are allowed.`);
                     break;
                 }
                 
@@ -237,6 +238,7 @@
             }
 
             renderNewImages();
+            updateCounter();
         }
 
         function showError(message){
@@ -254,9 +256,6 @@
             clientError.classList.add('d-none');
         }
 
-        function getFinalImageCount(){
-
-        }
 
         function renderNewImages(){
             newImagesGrid.innerHTML = "";
@@ -295,11 +294,156 @@
                     </div>
                 `;
 
+                columndiv.querySelector("img").addEventListener("load",()=>{
+                    URL.revokeObjectURL(imageURL); // remove from memory blob
+                },{
+                    once: true // we just wanna use only 1 times after load Event
+                });
+
+                columndiv.querySelector("button").addEventListener("click",()=>{
+                    URL.revokeObjectURL(imageURL);
+
+                    removeNewImage(index);
+                    
+                });
+
                 newImagesGrid.appendChild(columndiv);
 
             });
 
         }
+
+        // Remove New Image
+        function removeNewImage(index){
+            selectedFiles.splice(index,1); // (index, remove count)
+
+            renderNewImages();
+            updateCounter();
+        }
+
+        
+        // Remove Existing Image & Undo
+        document.querySelectorAll('.remove-existing-btn').forEach(extremovebutton=>{
+            extremovebutton.addEventListener('click',()=>{
+                const card = extremovebutton.closest('.existing-image-card');
+
+                const getimageurl = card.dataset.imageUrl;
+                // console.log(getimageurl);
+
+                // Undo
+                if(removeExistingImages.has(getimageurl)){
+                    removeExistingImages.delete(getimageurl);
+
+                    card.classList.remove('opacity-50');
+                    extremovebutton.classList.remove('btn-warning');
+                    extremovebutton.classList.add('btn-outline-warning');
+
+                    extremovebutton.innerHTML = `<i class="fa-solid fa-trash me-1"></i> Remove`;
+                }else{
+                    removeExistingImages.add(getimageurl);
+
+                    card.classList.add('opacity-50');
+                    extremovebutton.classList.add('btn-warning');
+                    extremovebutton.classList.remove('btn-outline-warning');
+
+                    extremovebutton.innerHTML = `<i class="fa-solid fa-rotate-left me-1"></i> Undo`;
+                }
+
+                // console.log(removeExistingImages);
+
+                renderRemoveInputs();
+                updateCounter();
+            });
+        })
+
+        function renderRemoveInputs(){
+            removeImageInputs.innerHTML = "";
+
+            removeExistingImages.forEach(imageurl =>{
+                const input = document.createElement("input");
+                input.type = "hidden";
+                input.name = "removeimages";
+                input.value = imageurl;
+
+                removeImageInputs.appendChild(input);
+            });
+        }
+
+        function getFinalImageCount(){
+            // return document.querySelectorAll('.existing-image-card').length + selectedFiles.length;
+
+            // const imageurlsCount = <%- JSON.stringify(aboutpage.imageurls?.length) %>;
+            // return  imageurlsCount + selectedFiles.length;
+
+            return (document.querySelectorAll('.existing-image-card').length - removeExistingImages.size) + selectedFiles.length;
+        }
+
+        function updateCounter(){
+            totalImageCount.textContent = getFinalImageCount();
+            newImageCount.textContent = selectedFiles.length;
+            selectedFileCount.textContent = selectedFiles.length;
+            
+            if(selectedFiles.length > 0){
+                selectedFileInfo.classList.remove('d-none');
+            }else{
+                selectedFileInfo.classList.add('d-none');
+            }
+        }
+        updateCounter();
+
+        // Form Submit with Upload Progress
+        aboutEditForm.addEventListener("submit",(e)=>{
+            e.preventDefault();
+
+            hideError();
+
+            // HTML Valication (checkValidity() = require, minlength, maxlength, type="email" type="number")
+            if(!aboutEditForm.checkValidity()){
+                aboutEditForm.reportValidity(); // show input UI error message
+                return;
+            }
+
+            // Maximum image validation
+            if(getFinalImageCount() > MAX_IMAGES){
+                showError(`Maximum ${MAX_IMAGES} images are allowed.`); 
+                return ;
+            }
+
+            const formData = new FormData(aboutEditForm);
+            const xhr = new XMLHttpRequest();
+
+            xhr.open("POST",aboutEditForm.action,true); // true = Asynchronous
+
+            xhr.upload.addEventListener("progress",(event)=>{
+                
+                const percent = 100;
+                uploadProgressBar.style.width = `${percent}%`;
+                uploadPercent.textContent = `${percent}%`;
+
+                if(percent < 100){
+                    uploadStatusText.textContent = selectedFiles.length > 0 ? `Uploading ${selectedFiles.length} image(s)...` : "Updating About Page....";
+                }else{
+                    uploadStatusText.textContent = "Updating complete";
+                }
+            });
+
+            xhr.addEventListener("load",(event)=>{
+                
+                if(xhr.status >= 200 && xhr.status < 400){
+                    window.location.assign("/about");
+                    return;
+                }
+
+                showError(`About Page update failed.`);
+            });
+
+            xhr.addEventListener("error",(event)=>{
+                showError(`Upload failed, Please check your network connection.`);
+            });
+
+            // Send Request
+            xhr.send(formData);
+        });
 
         function formatFileSize(bytes){
             if(bytes < 1024){
