@@ -412,11 +412,16 @@
             const formData = new FormData(aboutEditForm);
             const xhr = new XMLHttpRequest();
 
+            setUploadingState();
+
             xhr.open("POST",aboutEditForm.action,true); // true = Asynchronous
 
             xhr.upload.addEventListener("progress",(event)=>{
+                // console.log(event); // ProgressEvent {isTrusted: true, lengthComputable: true, loaded: 23888, total: 23888, type: 'progress', …}
+
+                if(!event.lengthComputable) return;
                 
-                const percent = 100;
+                const percent = Math.round((event.loaded / event.total) * 100);
                 uploadProgressBar.style.width = `${percent}%`;
                 uploadPercent.textContent = `${percent}%`;
 
@@ -435,15 +440,40 @@
                 }
 
                 showError(`About Page update failed.`);
+
+                resetUploadState();
             });
 
             xhr.addEventListener("error",(event)=>{
                 showError(`Upload failed, Please check your network connection.`);
+
+                resetUploadState();
             });
 
             // Send Request
             xhr.send(formData);
         });
+
+        function setUploadingState(){
+            uploadStatus.classList.remove('d-none');
+            uploadProgressBar.style.width = '0%';
+            uploadPercent.textContent = '0%';
+            uploadStatusText.textContent = "Preparing upload....";
+            
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span> Updating...`;
+
+            uploadStatus.scrollIntoView({
+                behavior: "smooth",
+                block: "center"
+            });
+        }
+
+        function resetUploadState(){
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = `<i class="fa-solid fa-floppy-disk me-1"></i> Update`;
+            uploadStatus.classList.add('d-none');
+        }
 
         function formatFileSize(bytes){
             if(bytes < 1024){
@@ -469,3 +499,8 @@
     </script>
 </body>
 </html>
+
+
+
+
+

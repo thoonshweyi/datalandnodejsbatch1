@@ -611,6 +611,15 @@ app.get('/about/edit',isAuth, async (req, res) => {
 	try{
 		let aboutpage = await req.db.collection('pages').findOne({slug:"about"});
 
+		if(!aboutpage){
+			res.status(404).render('404',{
+				title: "404",
+			});
+		}
+
+		// make sure imageurls is always an array
+		aboutpage.imageurls = Array.isArray(aboutpage.imageurls) ? aboutpage.imageurls : [];
+
 		return res.render('aboutedit',{	
 			title: 'Edit About Page',
 			error: null,
@@ -631,7 +640,14 @@ app.post('/about/edit',isAuth, upload.array('images',MAX_ABOUT_IMAGES), async (r
 		const {title,body} = req.body;
 
 		let aboutpage = await req.db.collection('pages').findOne({slug:"about"});
-		if(!aboutpage) return res.status(404).render('404',{title: "404"});
+		if(!aboutpage){
+			// Multer may already have saved new files
+			// so We need to Remove them because update cannot continue
+			cleanupNewUploads(req.files);
+
+			return res.status(404).render('404',{title: "404"});
+		}
+
 		if(!title || !body){
 			return res.render('aboutedit',{
 				title: 'Edit About Page',
@@ -701,6 +717,31 @@ app.post('/about/edit',isAuth, upload.array('images',MAX_ABOUT_IMAGES), async (r
 		})
 	}
 })
+
+function cleanupNewUploads(files = []){
+	const uploadURLS = files.map(file=> `/uploads/${file.filename}`); // ['/uploads/icon1.png','/uploads/icon2.png']
+	deleteUploadedImages(uploadURLS);
+}
+
+function deleteUploadedImages(imageURLs= []){
+	// const arr = ['a.jpg','b.jpg','a.jpg','b.jpg']
+	// const set = new Set(arr);
+	// console.log(set); // Set({'a.jpg','b.jpg})
+	// const unique = [...set]; // ['a.jpg','b.jpg']
+	
+	// ['/uploads/icon1.png','uploads/icon2.png',null,""]
+
+	const uniqueImages =[...new Set(imageURLs.filter(Boolean))]; // ['/uploads/icon1.png','uploads/icon2.png'], Boolean = null, undefined, "", NaN, false
+
+	for(const img of uniqueImages){
+		deleteUploadedImage(img);
+	}
+}
+
+function deleteUploadedImage(imageURL){
+
+
+}
 
 app.get('/about-us', (req, res) => {
 	res.redirect("/about");
