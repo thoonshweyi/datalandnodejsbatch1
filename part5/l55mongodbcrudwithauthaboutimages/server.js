@@ -648,69 +648,91 @@ app.post('/about/edit',isAuth, upload.array('images',MAX_ABOUT_IMAGES), async (r
 			return res.status(404).render('404',{title: "404"});
 		}
 
+		// old images (Current existing images)
+		let existingImages =  Array.isArray(aboutpage.imageurls) ? aboutpage.imageurls : [];
+
+		// Validate title + body
 		if(!title || !body){
-			return res.render('aboutedit',{
+			return res.status(422).render('aboutedit',{
 				title: 'Edit About Page',
 				error: "Title and Body are required",
 				aboutpage: {
 					...aboutpage,
 					title,
-					body
-				}
+					body,
+					imageurls: existingImages
+				},
+				maxImages: MAX_ABOUT_IMAGES
 			});
 		}
 
+		let removeImages = req.body.removeImages || [];
 
-		// method 1 old + new
-		let imageurls = aboutpage.imageurls || [];
+		// One input may become string,
+		// Multiple inputs become array
+		if(!Array.isArray(removeImages)){
+			removeImages = [removeImages];
+		}
 
-		// own method 2 HW (Old image deleted, only new image keep)
-		// imageurls.forEach(imageurl => {
-		// 	// remove extra /
-		// 	const oldpathsafe = path.join(__dirname,"public",imageurl).replace( /^\/+/ ,"");
-		// 	fs.unlink(oldpathsafe,(err)=>{
-		// 		if (err) console.log("OLd image delete error:",err.message);
-		// 	})
-		// });
-		// imageurls = [];
+		const safeRemoveImages = removeImages.filter(imageURL => existingImages.includes(imageURL));
+		// existing images user kept
+		const keptImages = existingImages.filter(imageURL => !safeRemoveImages.includes(imageURL));
+		// newly uploaded images
+		const newImages = (req.files || []).map(file => `/uploads/${file.filename}`);
 
+		const finalImages = [
+			...keptImages,
+			...newImages
+		]
 
-		// new upload images
-		if(req.files && req.files.length > 0){
-			// method 1 combine old + new
-			// const newimageUrls = req.files.map(file=> `/uploads/${file.filename}`);
-			// imageurls = [...imageurls,...newimageUrls]
+		// maximum 5 images total
+		if(finalImages.length > MAX_ABOUT_IMAGES){
+			// don't keep these newly uploaded files
+			await cleanupNewUploads(req.files);
 
-			// methd 2 remove old, add new
-			for(const oldimg of imageurls){
-				// remove extra /
-				const oldpathsafe = path.join(__dirname,"public",oldimg.replace( /^\/+/ ,""));
-				fs.unlink(oldpathsafe,(err)=>{
-					if (err) console.log("OLd about image delete error:",err.message);
-				});
-			}
-
-			// replace with new images
-			imageurls =  req.files.map(file=> `/uploads/${file.filename}`);
+			return res.status(422).render('aboutedit',{
+				title: 'Edit About Page',
+				error:`About Page can contain maximum ${MAX_ABOUT_IMAGES} images.`,
+				aboutpage: {
+					...aboutpage,
+					title,
+					body,
+					imageurls: existingImages
+				},
+				maxImages: MAX_ABOUT_IMAGES
+			});
 		}
 
 		const updateData = {
 			title: title.trim(),
 			body: body.trim(),
-			imageurls,
+			imageurls: finalImages,
 			updatedAt: new Date()
 		};
 
-		await req.db.collection('pages').updateOne(
+		const result = await req.db.collection('pages').updateOne(
 			{slug: "about"},
 			{$set: updateData}
 		)
+
+		if(result.matchedCount === 0){
+			await cleanupNewUploads(req.files);
+			return res.status(404).render('404',{title: "404"})
+		}
+
+		// MongoDB update succeeded Now delete removed old physical files
+		await deleteUploadedImages(safeRemoveImages);
 
 
 		return res.redirect("/about");
 	
 	}catch(error){
 		console.error("Error updating About Page",error)
+
+		// if something files after Multer uploaded files
+		// don't leave unused files on disk
+		await cleanupNewUploads(req.files);
+
 		return res.status(500).render('error',{
 			title: "Server Error",
 			message: `Failed to update about page ${error.message}`
@@ -718,28 +740,56 @@ app.post('/about/edit',isAuth, upload.array('images',MAX_ABOUT_IMAGES), async (r
 	}
 })
 
-function cleanupNewUploads(files = []){
+async function cleanupNewUploads(files = []){
 	const uploadURLS = files.map(file=> `/uploads/${file.filename}`); // ['/uploads/icon1.png','/uploads/icon2.png']
-	deleteUploadedImages(uploadURLS);
+	await deleteUploadedImages(uploadURLS);
 }
 
-function deleteUploadedImages(imageURLs= []){
-	// const arr = ['a.jpg','b.jpg','a.jpg','b.jpg']
-	// const set = new Set(arr);
-	// console.log(set); // Set({'a.jpg','b.jpg})
-	// const unique = [...set]; // ['a.jpg','b.jpg']
-	
-	// ['/uploads/icon1.png','uploads/icon2.png',null,""]
-
+async function deleteUploadedImages(imageURLs= []){
 	const uniqueImages =[...new Set(imageURLs.filter(Boolean))]; // ['/uploads/icon1.png','uploads/icon2.png'], Boolean = null, undefined, "", NaN, false
 
-	for(const img of uniqueImages){
-		deleteUploadedImage(img);
-	}
+	// Sequential (50mx x 3 files = 150ms)
+	// for(const img of uniqueImages){
+	// 	deleteUploadedImage(img);
+	// }
+
+	// Parallel Method
+	await Promise.all(uniqueImages.map(imageURL=>deleteUploadedImage(imageURL)));
+
+	// await Promise.all([
+	// 	Promise<pending>, // /uploads/icon1.png
+	// 	Promise<pending>, // /uploads/icon2.png
+	// 	Promise<pending>, // /uploads/icon3.png
+	// ])
+	// 50ms = 50ms
 }
 
-function deleteUploadedImage(imageURL){
+async function deleteUploadedImage(imageURL){
+	if(!imageURL || typeof imageURL !== "string"){
+		// console.error("image type must be string.")
+		return;
+	}
 
+	// /view/layout/head.ejs
+	// /uploads/icon1.png
+	if(!imageURL.startsWith('/uploads/')){
+		console.log("Skip insafe imae path: ",imageURL);
+		return ;
+	}
+
+	const relativePath = imageURL.replace(/^\/+/,"");
+
+	const fullPath = path.join(__dirname,"public",relativePath);
+
+	try{
+		await fs.promises.unlink(fullPath);
+		console.log("Deleted image: ",imageURL);
+	}catch(error){
+		// ENOENT = Error No Entry (No file)
+		if(error.code !== "ENOENT"){
+			console.log("Image delete error: ",error.message);
+		}
+	}
 
 }
 
