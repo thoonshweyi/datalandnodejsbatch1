@@ -197,13 +197,14 @@
             addFiles(Array.from(imagesInput.files));
         });
 
+        // Add New Images
         function addFiles(files){
-            // console.log(files); // (4) [File, File, File, File]
+            console.log(files); // (4) [File, File, File, File]
 
             hideError();
 
             for(const file of files){
-                console.log(file);
+                // console.log(file);
 
                 // must be image
                 if(!file.type.startsWith('image/')){
@@ -237,6 +238,7 @@
                 selectedFiles.push(file);
             }
 
+            syncInputFiles();
             renderNewImages();
             updateCounter();
         }
@@ -317,11 +319,25 @@
         function removeNewImage(index){
             selectedFiles.splice(index,1); // (index, remove count)
 
+            syncInputFiles();
             renderNewImages();
             updateCounter();
         }
 
-        
+        // sync - keep file input in sync
+        function syncInputFiles(){
+            const dataTransfer = new DataTransfer();
+
+            // console.log(dataTransfer);
+
+            selectedFiles.forEach(file=>{
+                dataTransfer.items.add(file);
+            });
+
+            // console.log(dataTransfer); // DataTransfer {dropEffect: 'none', effectAllowed: 'none', items: DataTransferItemList, types: Array(1), files: FileList}
+            imagesInput.files = dataTransfer.files;
+        }
+
         // Remove Existing Image & Undo
         document.querySelectorAll('.remove-existing-btn').forEach(extremovebutton=>{
             extremovebutton.addEventListener('click',()=>{
